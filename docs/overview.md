@@ -7,6 +7,8 @@
 ## 어디부터 읽으면 좋은가
 1. [공통 기반 사용 가이드](./architecture/common-foundation.md)
 2. [BaseEntity 가이드](./architecture/base-entity.md)
+3. [로컬 DB 실행 가이드](./operations/local-db.md)
 
 ## 디렉터리
 - `architecture/`: 공통 기반, 패키지 설계, 기술 의사결정
+- `operations/`: 로컬 실행, 운영 절차, 트러블슈팅
