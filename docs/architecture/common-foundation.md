@@ -12,18 +12,20 @@
 
 ## 목차
 1. [패키지 구조 복습](#1-패키지-구조-복습)
-2. [응답 포맷 작성](#2-응답-포맷-작성)
-3. [예외 던지는 방법](#3-예외-던지는-방법)
-4. [검증 실패 처리 규칙](#4-검증-실패-처리-규칙)
-5. [Security 401/403 포맷 통일](#5-security-401403-포맷-통일)
-6. [테스트 작성 기준](#6-테스트-작성-기준)
-7. [실전 예시](#7-실전-예시)
+2. [BaseEntity 규칙](#2-baseentity-규칙)
+3. [응답 포맷 작성](#3-응답-포맷-작성)
+4. [예외 던지는 방법](#4-예외-던지는-방법)
+5. [검증 실패 처리 규칙](#5-검증-실패-처리-규칙)
+6. [Security 401/403 포맷 통일](#6-security-401403-포맷-통일)
+7. [테스트 작성 기준](#7-테스트-작성-기준)
+8. [실전 예시](#8-실전-예시)
 
 ---
 
 ## 1. 패키지 구조 복습
 
 `src/main/java/com/todaypoor/global`
+- `entity/BaseEntity.java`
 - `response/ApiResponse.java`
 - `response/ValidationErrorData.java`
 - `response/ValidationErrorDetail.java`
@@ -32,6 +34,7 @@
 - `exception/GlobalExceptionHandler.java`
 
 핵심 책임
+- `BaseEntity`: 생성/수정/삭제 시각 공통 관리
 - `ApiResponse`: 모든 API 반환 포맷 표준화
 - `ErrorCode`: 상태코드/코드/메시지 단일 소스
 - `BusinessException`: 도메인 예외 전달 객체
@@ -39,7 +42,18 @@
 
 ---
 
-## 2. 응답 포맷 작성
+## 2. BaseEntity 규칙
+
+모든 엔티티는 `BaseEntity`를 상속하고 아래 필드를 공통으로 사용합니다.
+- `created_at`
+- `updated_at`
+- `deleted_at`
+
+자세한 규칙은 [BaseEntity 가이드](./base-entity.md)를 따릅니다.
+
+---
+
+## 3. 응답 포맷 작성
 
 ### 성공
 ```json
@@ -78,7 +92,7 @@
 
 ---
 
-## 3. 예외 던지는 방법
+## 4. 예외 던지는 방법
 
 서비스/도메인 로직에서:
 ```java
@@ -93,7 +107,7 @@ if (crew == null) {
 
 ---
 
-## 4. 검증 실패 처리 규칙
+## 5. 검증 실패 처리 규칙
 
 아래 예외는 전부 `INVALID_REQUEST(400)`으로 통일:
 - `MethodArgumentNotValidException`
@@ -109,7 +123,7 @@ if (crew == null) {
 
 ---
 
-## 5. Security 401/403 포맷 통일
+## 6. Security 401/403 포맷 통일
 
 `@RestControllerAdvice`는 필터 이전 예외를 못 잡기 때문에 Security 핸들러를 별도 구현합니다.
 
@@ -127,7 +141,7 @@ if (crew == null) {
 
 ---
 
-## 6. 테스트 작성 기준
+## 7. 테스트 작성 기준
 
 현재 테스트 파일:
 - `src/test/java/com/todaypoor/global/exception/GlobalExceptionHandlerTest.java`
@@ -139,7 +153,7 @@ if (crew == null) {
 
 ---
 
-## 7. 실전 예시
+## 8. 실전 예시
 
 컨트롤러:
 ```java

@@ -4,3 +4,4 @@
 
 ## 문서
 - [common-foundation.md](./common-foundation.md): 공통 예외/응답 사용 가이드
+- [base-entity.md](./base-entity.md): BaseEntity 및 Auditing 설계 가이드

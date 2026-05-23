@@ -6,6 +6,7 @@
 
 ## 어디부터 읽으면 좋은가
 1. [공통 기반 사용 가이드](./architecture/common-foundation.md)
+2. [BaseEntity 가이드](./architecture/base-entity.md)
 
 ## 디렉터리
 - `architecture/`: 공통 기반, 패키지 설계, 기술 의사결정
