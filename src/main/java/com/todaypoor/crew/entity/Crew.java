@@ -56,4 +56,48 @@ public class Crew extends BaseEntity {
     @Column(name = "owner_id", nullable = false)
     private UUID ownerId;
 
+    public static Crew create(
+            String name,
+            String description,
+            String inviteCode,
+            LocalDateTime inviteCodeExpiresAt,
+            AiMode aiMode,
+            UUID ownerId
+    ) {
+        validateCreate(name, inviteCode, inviteCodeExpiresAt, aiMode, ownerId);
+
+        Crew crew = new Crew();
+        crew.name = name;
+        crew.description = description;
+        crew.inviteCode = inviteCode;
+        crew.inviteCodeExpiresAt = inviteCodeExpiresAt;
+        crew.aiMode = aiMode;
+        crew.ownerId = ownerId;
+        return crew;
+    }
+
+    public void regenerateInviteCode(String inviteCode, LocalDateTime inviteCodeExpiresAt) {
+        validateInviteCode(inviteCode, inviteCodeExpiresAt);
+
+        this.inviteCode = inviteCode;
+        this.inviteCodeExpiresAt = inviteCodeExpiresAt;
+    }
+
+    private static void validateCreate(
+            String name, String inviteCode, LocalDateTime inviteCodeExpiresAt, AiMode aiMode, UUID ownerId
+    ) {
+        if (name == null || name.isBlank()) throw new IllegalArgumentException("name은 필수입니다.");
+        validateInviteCode(inviteCode, inviteCodeExpiresAt);
+        if (aiMode == null) throw new IllegalArgumentException("aiMode는 필수입니다.");
+        if (ownerId == null) throw new IllegalArgumentException("ownerId는 필수입니다.");
+    }
+
+    private static void validateInviteCode(String inviteCode, LocalDateTime inviteCodeExpiresAt) {
+        if (inviteCode == null || inviteCode.isBlank()) throw new IllegalArgumentException("inviteCode는 필수입니다.");
+        if (inviteCodeExpiresAt == null) throw new IllegalArgumentException("inviteCodeExpiresAt는 필수입니다.");
+        if (!inviteCodeExpiresAt.isAfter(LocalDateTime.now())) {
+            throw new IllegalArgumentException("inviteCodeExpiresAt는 현재 시각 이후여야 합니다.");
+        }
+    }
+
 }

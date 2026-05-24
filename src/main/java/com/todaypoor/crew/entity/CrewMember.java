@@ -54,4 +54,35 @@ public class CrewMember extends BaseEntity {
     @Column(name = "joined_at", nullable = false)
     private LocalDateTime joinedAt;
 
+    public static CrewMember createOwner(UUID crewId, UUID userId) {
+        return create(crewId, userId, CrewRole.OWNER);
+    }
+
+    public static CrewMember createMember(UUID crewId, UUID userId) {
+        return create(crewId, userId, CrewRole.MEMBER);
+    }
+
+    private static CrewMember create(UUID crewId, UUID userId, CrewRole role) {
+        validateCreate(crewId, userId, role);
+
+        CrewMember crewMember = new CrewMember();
+        crewMember.crewId = crewId;
+        crewMember.userId = userId;
+        crewMember.role = role;
+        crewMember.joinedAt = LocalDateTime.now();
+        return crewMember;
+    }
+
+    private static void validateCreate(UUID crewId, UUID userId, CrewRole role) {
+        if (crewId == null) throw new IllegalArgumentException("crewId는 필수입니다.");
+        if (userId == null) throw new IllegalArgumentException("userId는 필수입니다.");
+        if (role == null) throw new IllegalArgumentException("role은 필수입니다.");
+    }
+
+    public void restoreMember(CrewRole role) {
+        if (role == null) throw new IllegalArgumentException("role은 필수입니다.");
+        this.role = role;
+        this.joinedAt = LocalDateTime.now();
+        this.restore(); // BaseEntity
+    }
 }
