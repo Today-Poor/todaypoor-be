@@ -5,6 +5,8 @@ import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -30,45 +32,67 @@ public class Expense extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @Column(name = "user_id", nullable = false)
+    private UUID userId;
+
     @Column(name = "crew_id", nullable = false)
     private UUID crewId;
 
-    @Column(name = "user_id", nullable = false)
-    private UUID userId;
+    @Column(name = "ocr_result_id", nullable = false)
+    private UUID ocrResultId;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private ExpenseCategory category;
 
     @Column(nullable = false)
     private Integer amount;
 
-    @Column(name = "merchant_name", nullable = false)
-    private String merchantName;
+    @Column(nullable = false)
+    private String merchant;
+
+    private String memo;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private ExpenseVisibility visibility;
 
     @Column(name = "spent_at", nullable = false)
     private LocalDateTime spentAt;
 
-    @Column(name = "receipt_image_url")
-    private String receiptImageUrl;
-
-    private String memo;
-
-    public static Expense create(UUID crewId, UUID userId, Integer amount, String merchantName, LocalDateTime spentAt, String receiptImageUrl, String memo) {
-        validateCreate(crewId, userId, amount, merchantName, spentAt);
+    public static Expense create(
+            UUID userId, UUID crewId, UUID ocrResultId,
+            ExpenseCategory category, Integer amount,
+            String merchant, String memo,
+            ExpenseVisibility visibility, LocalDateTime spentAt
+    ) {
+        validateCreate(userId, crewId, ocrResultId, category, amount, merchant, visibility, spentAt);
 
         Expense expense = new Expense();
-        expense.crewId = crewId;
         expense.userId = userId;
+        expense.crewId = crewId;
+        expense.ocrResultId = ocrResultId;
+        expense.category = category;
         expense.amount = amount;
-        expense.merchantName = merchantName;
-        expense.spentAt = spentAt;
-        expense.receiptImageUrl = receiptImageUrl;
+        expense.merchant = merchant;
         expense.memo = memo;
+        expense.visibility = visibility;
+        expense.spentAt = spentAt;
         return expense;
     }
 
-    private static void validateCreate(UUID crewId, UUID userId, Integer amount, String merchantName, LocalDateTime spentAt) {
-        if (crewId == null) throw new IllegalArgumentException("crewId는 필수입니다.");
+    private static void validateCreate(
+            UUID userId, UUID crewId, UUID ocrResultId,
+            ExpenseCategory category, Integer amount,
+            String merchant, ExpenseVisibility visibility, LocalDateTime spentAt
+    ) {
         if (userId == null) throw new IllegalArgumentException("userId는 필수입니다.");
-        if (amount == null || amount < 0) throw new IllegalArgumentException("올바른 결제 금액이 아닙니다.");
-        if (merchantName == null || merchantName.isBlank()) throw new IllegalArgumentException("가맹점명은 필수입니다.");
-        if (spentAt == null) throw new IllegalArgumentException("결제 일시는 필수입니다.");
+        if (crewId == null) throw new IllegalArgumentException("crewId는 필수입니다.");
+        if (ocrResultId == null) throw new IllegalArgumentException("ocrResultId는 필수입니다.");
+        if (category == null) throw new IllegalArgumentException("category는 필수입니다.");
+        if (amount == null || amount < 0) throw new IllegalArgumentException("올바른 금액이 아닙니다.");
+        if (merchant == null || merchant.isBlank()) throw new IllegalArgumentException("merchant는 필수입니다.");
+        if (visibility == null) throw new IllegalArgumentException("visibility는 필수입니다.");
+        if (spentAt == null) throw new IllegalArgumentException("spentAt은 필수입니다.");
     }
 }

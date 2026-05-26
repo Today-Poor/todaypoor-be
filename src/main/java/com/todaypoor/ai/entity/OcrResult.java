@@ -30,26 +30,29 @@ public class OcrResult extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(name = "image_url", nullable = false)
-    private String imageUrl;
-
     @Lob
-    @Column(name = "raw_json", columnDefinition = "TEXT")
-    private String rawJson;
+    @Column(name = "raw_text", columnDefinition = "TEXT", nullable = false)
+    private String rawText;
 
-    @Column(name = "merchant_name")
-    private String merchantName;
+    @Column(name = "extracted_merchant")
+    private String extractedMerchant;
 
-    private Integer amount;
+    @Column(name = "extracted_amount")
+    private Integer extractedAmount;
 
-    public static OcrResult create(String imageUrl, String rawJson, String merchantName, Integer amount) {
-        if (imageUrl == null || imageUrl.isBlank()) throw new IllegalArgumentException("imageUrl은 필수입니다.");
+    public static OcrResult create(String rawText, String extractedMerchant, Integer extractedAmount) {
+        validateCreate(rawText);
 
         OcrResult result = new OcrResult();
-        result.imageUrl = imageUrl;
-        result.rawJson = rawJson;
-        result.merchantName = merchantName;
-        result.amount = amount;
+        result.rawText = rawText;
+        result.extractedMerchant = extractedMerchant;
+        result.extractedAmount = extractedAmount;
         return result;
+    }
+
+    private static void validateCreate(String rawText) {
+        if (rawText == null || rawText.isBlank()) {
+            throw new IllegalArgumentException("rawText는 필수입니다.");
+        }
     }
 }
