@@ -25,6 +25,10 @@ import com.todaypoor.global.entity.BaseEntity;
                 @UniqueConstraint(
                         name = "uk_ranking_result_event_id_user_id",
                         columnNames = {"daily_ranking_event_id", "user_id"}
+                ),
+                @UniqueConstraint( //피드백 반영 및 추가
+                        name = "uk_event_rank",
+                        columnNames = {"daily_ranking_event_id", "rank_no"}
                 )
         }
 )
