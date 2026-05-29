@@ -34,25 +34,25 @@ public class OcrResult extends BaseEntity {
     @Column(name = "raw_text", columnDefinition = "TEXT", nullable = false)
     private String rawText;
 
-    @Column(name = "extracted_merchant")
-    private String extractedMerchant;
+    @Lob
+    @Column(name = "parsed_data", columnDefinition = "TEXT", nullable = false)
+    private String parsedData;
 
-    @Column(name = "extracted_amount")
-    private Integer extractedAmount;
-
-    public static OcrResult create(String rawText, String extractedMerchant, Integer extractedAmount) {
-        validateCreate(rawText);
+    public static OcrResult create(String rawText, String parsedData) {
+        validateCreate(rawText, parsedData);
 
         OcrResult result = new OcrResult();
         result.rawText = rawText;
-        result.extractedMerchant = extractedMerchant;
-        result.extractedAmount = extractedAmount;
+        result.parsedData = parsedData;
         return result;
     }
 
-    private static void validateCreate(String rawText) {
+    private static void validateCreate(String rawText, String parsedData) {
         if (rawText == null || rawText.isBlank()) {
             throw new IllegalArgumentException("rawText는 필수입니다.");
+        }
+        if (parsedData == null || parsedData.isBlank()) {
+            throw new IllegalArgumentException("parsedData는 필수입니다.");
         }
     }
 }
