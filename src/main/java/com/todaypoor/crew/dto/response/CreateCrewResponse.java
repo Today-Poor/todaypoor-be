@@ -10,22 +10,28 @@ public record CreateCrewResponse(
         UUID crewId,
         String name,
         String description,
+        Integer maxMemberCount,
+        Integer currentMemberCount,
+        AiMode aiMode,
         String inviteCode,
         LocalDateTime inviteCodeExpiresAt,
-        AiMode aiMode,
-        UUID ownerId,
+        Owner owner,
         LocalDateTime createdAt
 ) {
 
-    public static CreateCrewResponse from(Crew crew) {
+    public record Owner(UUID userId, String nickname, String profileImageUrl) {}
+
+    public static CreateCrewResponse of(Crew crew, Owner owner, Integer currentMemberCount) {
         return new CreateCrewResponse(
                 crew.getId(),
                 crew.getName(),
                 crew.getDescription(),
+                crew.getMaxMemberCount(),
+                currentMemberCount,
+                crew.getAiMode(),
                 crew.getInviteCode(),
                 crew.getInviteCodeExpiresAt(),
-                crew.getAiMode(),
-                crew.getOwnerId(),
+                owner,
                 crew.getCreatedAt()
         );
     }

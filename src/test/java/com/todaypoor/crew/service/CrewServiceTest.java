@@ -52,7 +52,7 @@ class CrewServiceTest {
     void createCrew_success_savesCrewAndOwnerMember() {
         UUID userId = UUID.randomUUID();
         UUID crewId = UUID.randomUUID();
-        CreateCrewRequest request = new CreateCrewRequest("거지방 1조", "설명", AiMode.ROAST);
+        CreateCrewRequest request = new CreateCrewRequest("거지방 1조", "설명", 5, AiMode.ROAST);
 
         given(crewRepository.existsByInviteCodeAndDeletedAtIsNull(anyString())).willReturn(false);
         given(crewRepository.save(any(Crew.class))).willAnswer(invocation -> {
@@ -67,8 +67,10 @@ class CrewServiceTest {
         assertEquals(crewId, response.crewId());
         assertEquals("거지방 1조", response.name());
         assertEquals("설명", response.description());
+        assertEquals(5, response.maxMemberCount());
+        assertEquals(1, response.currentMemberCount());
         assertEquals(AiMode.ROAST, response.aiMode());
-        assertEquals(userId, response.ownerId());
+        assertEquals(userId, response.owner().userId());
         assertNotNull(response.inviteCode());
         assertEquals(8, response.inviteCode().length());
         assertTrue(response.inviteCode().equals(response.inviteCode().toUpperCase()));
@@ -85,7 +87,7 @@ class CrewServiceTest {
 
     @Test
     void createCrew_nullUserId_throwsIllegalArgumentException() {
-        CreateCrewRequest request = new CreateCrewRequest("거지방 1조", "설명", AiMode.ROAST);
+        CreateCrewRequest request = new CreateCrewRequest("거지방 1조", "설명", 5, AiMode.ROAST);
 
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
@@ -117,12 +119,15 @@ class CrewServiceTest {
         given(crewMemberRepository.existsByCrewIdAndUserIdAndDeletedAtIsNull(crewId, userId)).willReturn(false);
         given(crewMemberRepository.findDeletedMember(crewId, userId)).willReturn(Optional.empty());
         given(crewMemberRepository.save(any(CrewMember.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(crewMemberRepository.countByCrewIdAndDeletedAtIsNull(crewId)).willReturn(2);
 
         JoinCrewResponse response = crewService.joinCrew(userId, new JoinCrewRequest(" abcd1234 "));
 
         assertEquals(crewId, response.crewId());
-        assertEquals(userId, response.userId());
+        assertEquals("테스트 크루", response.crewName());
         assertEquals(CrewRole.MEMBER, response.role());
+        assertEquals(2, response.currentMemberCount());
+        assertEquals(5, response.maxMemberCount());
         assertNotNull(response.joinedAt());
     }
 
@@ -138,6 +143,7 @@ class CrewServiceTest {
         given(crewMemberRepository.existsByCrewIdAndUserIdAndDeletedAtIsNull(crewId, userId)).willReturn(false);
         given(crewMemberRepository.findDeletedMember(crewId, userId)).willReturn(Optional.of(deletedMember));
         given(crewMemberRepository.save(any(CrewMember.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(crewMemberRepository.countByCrewIdAndDeletedAtIsNull(crewId)).willReturn(2);
 
         JoinCrewResponse response = crewService.joinCrew(userId, new JoinCrewRequest("restore1"));
 
@@ -201,7 +207,8 @@ class CrewServiceTest {
                 inviteCode,
                 expiresAt,
                 AiMode.ROAST,
-                UUID.randomUUID()
+                UUID.randomUUID(),
+                5
         );
         setField(crew, "id", crewId);
         return crew;

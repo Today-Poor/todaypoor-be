@@ -56,15 +56,19 @@ public class Crew extends BaseEntity {
     @Column(name = "owner_id", nullable = false)
     private UUID ownerId;
 
+    @Column(name = "max_member_count", nullable = false)
+    private Integer maxMemberCount;
+
     public static Crew create(
             String name,
             String description,
             String inviteCode,
             LocalDateTime inviteCodeExpiresAt,
             AiMode aiMode,
-            UUID ownerId
+            UUID ownerId,
+            Integer maxMemberCount
     ) {
-        validateCreate(name, inviteCode, inviteCodeExpiresAt, aiMode, ownerId);
+        validateCreate(name, inviteCode, inviteCodeExpiresAt, aiMode, ownerId, maxMemberCount);
 
         Crew crew = new Crew();
         crew.name = name;
@@ -73,6 +77,7 @@ public class Crew extends BaseEntity {
         crew.inviteCodeExpiresAt = inviteCodeExpiresAt;
         crew.aiMode = aiMode;
         crew.ownerId = ownerId;
+        crew.maxMemberCount = maxMemberCount;
         return crew;
     }
 
@@ -84,12 +89,14 @@ public class Crew extends BaseEntity {
     }
 
     private static void validateCreate(
-            String name, String inviteCode, LocalDateTime inviteCodeExpiresAt, AiMode aiMode, UUID ownerId
+            String name, String inviteCode, LocalDateTime inviteCodeExpiresAt, AiMode aiMode, UUID ownerId, Integer maxMemberCount
     ) {
         if (name == null || name.isBlank()) throw new IllegalArgumentException("name은 필수입니다.");
         validateInviteCode(inviteCode, inviteCodeExpiresAt);
         if (aiMode == null) throw new IllegalArgumentException("aiMode는 필수입니다.");
         if (ownerId == null) throw new IllegalArgumentException("ownerId는 필수입니다.");
+        if (maxMemberCount == null) throw new IllegalArgumentException("maxMemberCount는 필수입니다.");
+
     }
 
     private static void validateInviteCode(String inviteCode, LocalDateTime inviteCodeExpiresAt) {

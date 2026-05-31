@@ -20,7 +20,7 @@ public enum ErrorCode {
     INVALID_MAX_MEMBER_COUNT(
             HttpStatus.BAD_REQUEST,
             "INVALID_MAX_MEMBER_COUNT",
-            "크루 최대 인원은 2명 이상 5명 이하로 설정해야 합니다."
+            "크루 최대 인원은 1명 이상 5명 이하로 설정해야 합니다."
     ),
     MAX_MEMBER_COUNT_LESS_THAN_CURRENT(
             HttpStatus.BAD_REQUEST,

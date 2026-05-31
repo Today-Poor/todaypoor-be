@@ -31,4 +31,6 @@ public interface CrewMemberRepository extends JpaRepository<CrewMember, UUID> {
     where crew_id = :crewId and user_id = :userId and deleted_at is not null
     """, nativeQuery = true)
     int restoreMember(@Param("crewId") UUID crewId, @Param("userId") UUID userId, @Param("joinedAt") LocalDateTime joinedAt, @Param("role") String role);
+
+    Integer countByCrewIdAndDeletedAtIsNull(UUID crewId);
 }

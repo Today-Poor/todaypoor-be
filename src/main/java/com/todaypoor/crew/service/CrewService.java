@@ -49,7 +49,8 @@ public class CrewService {
                 inviteCode,
                 inviteCodeExpiresAt,
                 request.aiMode(),
-                userId
+                userId,
+                request.maxMemberCount()
         );
 
         Crew savedCrew = crewRepository.save(crew);
@@ -57,7 +58,15 @@ public class CrewService {
         CrewMember ownerMember = CrewMember.createOwner(savedCrew.getId(), userId);
         crewMemberRepository.save(ownerMember);
 
-        return CreateCrewResponse.from(savedCrew);
+        Integer currentMemberCount = 1;
+
+        CreateCrewResponse.Owner owner = new CreateCrewResponse.Owner(
+                userId,
+                null,
+                null
+        );
+
+        return CreateCrewResponse.of(savedCrew, owner, currentMemberCount);
     }
 
     private void validateUserId(UUID userId) {
@@ -77,6 +86,10 @@ public class CrewService {
 
         if (request.aiMode() == null) {
             throw new IllegalArgumentException("aiMode는 필수입니다.");
+        }
+
+        if (request.maxMemberCount() == null) {
+            throw new IllegalArgumentException("maxMemberCount는 필수입니다.");
         }
     }
 
@@ -123,7 +136,9 @@ public class CrewService {
                 })
                 .orElseGet(() -> crewMemberRepository.save(CrewMember.createMember(crew.getId(), userId)));
 
-        return JoinCrewResponse.from(crewMember);
+        Integer currentMemberCount = crewMemberRepository.countByCrewIdAndDeletedAtIsNull(crew.getId());
+
+        return JoinCrewResponse.of(crew, crewMember, currentMemberCount);
     }
 
     private void validateJoinCrewRequest(JoinCrewRequest request) {

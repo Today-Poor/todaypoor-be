@@ -44,15 +44,22 @@ class CrewControllerTest {
         UUID userId = UUID.randomUUID();
         UUID crewId = UUID.randomUUID();
         LocalDateTime now = LocalDateTime.now();
+        CreateCrewResponse.Owner owner = new CreateCrewResponse.Owner(
+                userId,
+                "철수",
+                "https://image-url.com/profile.png"
+        );
 
         CreateCrewResponse response = new CreateCrewResponse(
                 crewId,
                 "거지방 1조",
                 "설명",
+                5,
+                1,
+                AiMode.ROAST,
                 "ABCD1234",
                 now.plusDays(7),
-                AiMode.ROAST,
-                userId,
+                owner,
                 now
         );
 
@@ -62,6 +69,7 @@ class CrewControllerTest {
                 {
                   "name": "거지방 1조",
                   "description": "설명",
+                  "maxMemberCount": 5,
                   "aiMode": "ROAST"
                 }
                 """;
@@ -83,14 +91,14 @@ class CrewControllerTest {
     void joinCrew_success() throws Exception {
         UUID userId = UUID.randomUUID();
         UUID crewId = UUID.randomUUID();
-        UUID crewMemberId = UUID.randomUUID();
         LocalDateTime now = LocalDateTime.now();
 
         JoinCrewResponse response = new JoinCrewResponse(
-                crewMemberId,
-                userId,
                 crewId,
+                "거지방 1조",
                 CrewRole.MEMBER,
+                4,
+                5,
                 now
         );
 
@@ -111,7 +119,8 @@ class CrewControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.code").value("OK"))
-                .andExpect(jsonPath("$.data.crewMemberId").value(crewMemberId.toString()))
+                .andExpect(jsonPath("$.data.crewId").value(crewId.toString()))
+                .andExpect(jsonPath("$.data.crewName").value("거지방 1조"))
                 .andExpect(jsonPath("$.data.role").value("MEMBER"));
     }
 
