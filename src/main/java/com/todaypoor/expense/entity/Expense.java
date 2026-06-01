@@ -95,4 +95,20 @@ public class Expense extends BaseEntity {
         if (visibility == null) throw new IllegalArgumentException("visibility는 필수입니다.");
         if (spentAt == null) throw new IllegalArgumentException("spentAt은 필수입니다.");
     }
+
+    public void update(
+            ExpenseCategory category, Integer amount,
+            String merchant, String memo,
+            ExpenseVisibility visibility, LocalDateTime spentAt
+    ) {
+        if (amount == null || amount < 0) throw new IllegalArgumentException("올바른 금액이 아닙니다.");
+        if (merchant == null || merchant.isBlank()) throw new IllegalArgumentException("merchant는 필수입니다.");
+
+        this.category = category;
+        this.amount = amount;
+        this.merchant = merchant;
+        this.memo = memo;
+        this.visibility = visibility;
+        this.spentAt = spentAt;
+    }
 }
