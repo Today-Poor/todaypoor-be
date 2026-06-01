@@ -4,9 +4,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 import com.todaypoor.expense.dto.request.ExpenseUpdateRequest;
-import com.todaypoor.expense.dto.response.ExpenseDetailResponse;
-import com.todaypoor.expense.dto.response.ExpenseUpdateResponse;
-import com.todaypoor.expense.dto.response.MemberExpenseListResponse;
+import com.todaypoor.expense.dto.response.*;
 import com.todaypoor.global.response.ApiResponse;
 import jakarta.validation.Valid;
 
@@ -15,11 +13,12 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.MediaType;
 
 import lombok.RequiredArgsConstructor;
 
 import com.todaypoor.expense.dto.request.ExpenseSaveRequest;
-import com.todaypoor.expense.dto.response.ExpenseSaveResponse;
 import com.todaypoor.expense.service.ExpenseService;
 
 @RestController
@@ -90,4 +89,23 @@ public class ExpenseController {
 
         return ResponseEntity.ok(ApiResponse.success(response));
     }
+
+    @PostMapping(value = "/expenses/ocr", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<OcrAnalyzeResponse>> analyzeReceipt(
+            @PathVariable UUID crewId,
+            @RequestPart("image") MultipartFile image // 키값은 api명세서에 image라고 적어둠.
+    ) {
+        UUID userId = UUID.randomUUID();
+
+        if (image == null || image.isEmpty()) {
+            throw new IllegalArgumentException("이미지 파일이 없습니다.");
+        }
+
+        OcrAnalyzeResponse response = expenseService.analyzeReceipt(crewId, userId, image);
+
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+
+
 }
