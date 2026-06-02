@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import jakarta.validation.Valid;
 
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -88,6 +89,15 @@ public class CrewController {
             @PathVariable UUID crewId
     ) {
         return ApiResponse.success(crewService.getCrewDetail(userId, crewId));
+    }
+
+    @DeleteMapping("/{crewId}")
+    public ApiResponse<Void> deleteCrew(
+            @RequestHeader("X-USER-ID") UUID userId,
+            @PathVariable UUID crewId
+    ) {
+        crewService.deleteCrew(userId, crewId);
+        return ApiResponse.success(null);
     }
 
 }

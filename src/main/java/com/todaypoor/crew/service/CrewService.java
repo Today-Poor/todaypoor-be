@@ -314,5 +314,19 @@ public class CrewService {
         return CrewDetailResponse.of(crew, owner, currentMemberCount);
     }
 
+    @Transactional
+    public void deleteCrew(UUID userId, UUID crewId) {
+
+        validateUserId(userId);
+        validateCrewId(crewId);
+
+        crewAuthorizationService.validateOwner(crewId, userId);
+
+        Crew crew = crewRepository.findByIdAndDeletedAtIsNull(crewId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CREW_NOT_FOUND));
+
+        crew.softDelete();
+    }
+
 
 }
