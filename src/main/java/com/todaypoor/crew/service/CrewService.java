@@ -14,7 +14,7 @@ import com.todaypoor.crew.dto.request.JoinCrewRequest;
 import com.todaypoor.crew.dto.request.UpdateCrewRequest;
 import com.todaypoor.crew.dto.response.CreateCrewResponse;
 import com.todaypoor.crew.dto.response.JoinCrewResponse;
-import com.todaypoor.crew.dto.response.RegenerateInviteCodeResponse;
+import com.todaypoor.crew.dto.response.InviteCodeResponse;
 import com.todaypoor.crew.dto.response.UpdateCrewResponse;
 import com.todaypoor.crew.entity.Crew;
 import com.todaypoor.crew.entity.CrewMember;
@@ -223,7 +223,7 @@ public class CrewService {
     }
 
     @Transactional
-    public RegenerateInviteCodeResponse reissueInviteCode(UUID userId, UUID crewId) {
+    public InviteCodeResponse reissueInviteCode(UUID userId, UUID crewId) {
 
         validateUserId(userId);
         validateCrewId(crewId);
@@ -239,7 +239,33 @@ public class CrewService {
 
         crew.regenerateInviteCode(inviteCode, inviteCodeExpiresAt);
 
-        return RegenerateInviteCodeResponse.from(crew);
+        return InviteCodeResponse.from(crew);
+
+    }
+
+    @Transactional
+    public InviteCodeResponse getInviteCode(UUID userId, UUID crewId) {
+
+        validateUserId(userId);
+        validateCrewId(crewId);
+
+        // 크루원(방장 포함)이어야 조회 가능
+        crewAuthorizationService.validateMember(crewId, userId);
+
+        Crew crew = crewRepository.findByIdAndDeletedAtIsNull(crewId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CREW_NOT_FOUND));
+
+        String inviteCode = crew.getInviteCode();
+        LocalDateTime inviteCodeExpiresAt = crew.getInviteCodeExpiresAt();
+
+        if (inviteCode == null || !crew.getInviteCodeExpiresAt().isAfter(LocalDateTime.now())) {
+            inviteCode = generateUniqueInviteCode();
+            inviteCodeExpiresAt = LocalDateTime.now().plusDays(INVITE_CODE_EXPIRE_DAYS);
+
+            crew.regenerateInviteCode(inviteCode, inviteCodeExpiresAt);
+        }
+
+        return InviteCodeResponse.from(crew);
 
     }
 }

@@ -5,7 +5,7 @@ import java.util.UUID;
 
 import com.todaypoor.crew.entity.Crew;
 
-public record RegenerateInviteCodeResponse(
+public record InviteCodeResponse(
 
         UUID crewId,
         String inviteCode,
@@ -13,9 +13,9 @@ public record RegenerateInviteCodeResponse(
 
 ) {
 
-    public static RegenerateInviteCodeResponse from(Crew crew) {
+    public static InviteCodeResponse from(Crew crew) {
 
-        return new RegenerateInviteCodeResponse(
+        return new InviteCodeResponse(
 
                 crew.getId(),
                 crew.getInviteCode(),
