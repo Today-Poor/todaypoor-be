@@ -21,6 +21,7 @@ public record CrewDetailResponse(
         LocalDateTime updatedAt
 ) {
 
+    // TODO: Owner.of 추가 예정
     public record Owner(UUID userId, String nickname, String profileImageUrl) {}
 
     public static CrewDetailResponse of(Crew crew, Owner owner, Integer currentMemberCount) {

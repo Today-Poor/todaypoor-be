@@ -15,6 +15,9 @@ import com.todaypoor.crew.dto.request.JoinCrewRequest;
 import com.todaypoor.crew.dto.request.UpdateCrewRequest;
 import com.todaypoor.crew.dto.response.CreateCrewResponse;
 import com.todaypoor.crew.dto.response.CrewDetailResponse;
+import com.todaypoor.crew.dto.response.CrewMainResponse;
+import com.todaypoor.crew.dto.response.CrewMainResponse.LatestExpense;
+import com.todaypoor.crew.dto.response.CrewMainResponse.MemberSummary;
 import com.todaypoor.crew.dto.response.InviteCodeResponse;
 import com.todaypoor.crew.dto.response.JoinCrewResponse;
 import com.todaypoor.crew.dto.response.MyCrewListResponse;
@@ -25,6 +28,8 @@ import com.todaypoor.crew.entity.CrewMember;
 import com.todaypoor.crew.entity.CrewRole;
 import com.todaypoor.crew.repository.CrewMemberRepository;
 import com.todaypoor.crew.repository.CrewRepository;
+import com.todaypoor.expense.entity.Expense;
+import com.todaypoor.expense.repository.ExpenseRepository;
 import com.todaypoor.global.exception.BusinessException;
 import com.todaypoor.global.exception.ErrorCode;
 
@@ -37,6 +42,7 @@ public class CrewService {
     private final CrewRepository crewRepository;
     private final CrewMemberRepository crewMemberRepository;
     private final CrewAuthorizationService crewAuthorizationService;
+    private final ExpenseRepository expenseRepository;
 
     private static final int INVITE_CODE_EXPIRE_DAYS = 7;
     private static final int INVITE_CODE_LENGTH = 8;
@@ -328,5 +334,32 @@ public class CrewService {
         crew.softDelete();
     }
 
+    public CrewMainResponse getCrewMain(UUID userId, UUID crewId) {
+
+        validateUserId(userId);
+        validateCrewId(crewId);
+
+        crewAuthorizationService.validateMember(crewId, userId);
+
+        Crew crew = crewRepository.findByIdAndDeletedAtIsNull(crewId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CREW_NOT_FOUND));
+
+        Integer currentMemberCount = crewMemberRepository.countByCrewIdAndDeletedAtIsNull(crewId);
+
+        List<MemberSummary> members = crewMemberRepository.findByCrewIdAndDeletedAtIsNull(crewId).stream()
+                .map(crewMember -> {
+                    Expense latestExpense = expenseRepository
+                            .findFirstByCrewIdAndUserIdAndDeletedAtIsNullOrderBySpentAtDesc(crewId, crewMember.getUserId())
+                            .orElse(null);
+
+                    return MemberSummary.of(
+                            crewMember,
+                            LatestExpense.from(latestExpense)
+                    );
+                })
+                .toList();
+
+        return CrewMainResponse.of(crew, currentMemberCount, members);
+    }
 
 }

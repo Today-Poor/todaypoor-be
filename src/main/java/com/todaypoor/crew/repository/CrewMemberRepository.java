@@ -37,4 +37,6 @@ public interface CrewMemberRepository extends JpaRepository<CrewMember, UUID> {
 
     // userId를 통해 해당 userId가 속한 crewId 정보를 찾을 수 있음
     List<CrewMember> findByUserIdAndDeletedAtIsNull(UUID userId);
+
+    List<CrewMember> findByCrewIdAndDeletedAtIsNull(UUID crewId);
 }

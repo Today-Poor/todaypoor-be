@@ -21,6 +21,7 @@ import com.todaypoor.crew.dto.request.JoinCrewRequest;
 import com.todaypoor.crew.dto.request.UpdateCrewRequest;
 import com.todaypoor.crew.dto.response.CreateCrewResponse;
 import com.todaypoor.crew.dto.response.CrewDetailResponse;
+import com.todaypoor.crew.dto.response.CrewMainResponse;
 import com.todaypoor.crew.dto.response.InviteCodeResponse;
 import com.todaypoor.crew.dto.response.JoinCrewResponse;
 import com.todaypoor.crew.dto.response.MyCrewListResponse;
@@ -98,6 +99,14 @@ public class CrewController {
     ) {
         crewService.deleteCrew(userId, crewId);
         return ApiResponse.success(null);
+    }
+
+    @GetMapping("/{crewId}")
+    public ApiResponse<CrewMainResponse> getCrewMain(
+            @RequestHeader("X-USER-ID") UUID userId,
+            @PathVariable UUID crewId
+    ) {
+        return ApiResponse.success(crewService.getCrewMain(userId, crewId));
     }
 
 }
