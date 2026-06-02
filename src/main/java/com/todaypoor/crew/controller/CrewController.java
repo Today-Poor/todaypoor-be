@@ -4,6 +4,8 @@ import java.util.UUID;
 
 import jakarta.validation.Valid;
 
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -14,8 +16,10 @@ import lombok.RequiredArgsConstructor;
 
 import com.todaypoor.crew.dto.request.CreateCrewRequest;
 import com.todaypoor.crew.dto.request.JoinCrewRequest;
+import com.todaypoor.crew.dto.request.UpdateCrewRequest;
 import com.todaypoor.crew.dto.response.CreateCrewResponse;
 import com.todaypoor.crew.dto.response.JoinCrewResponse;
+import com.todaypoor.crew.dto.response.UpdateCrewResponse;
 import com.todaypoor.crew.service.CrewService;
 import com.todaypoor.global.response.ApiResponse;
 
@@ -40,6 +44,15 @@ public class CrewController {
             @Valid @RequestBody JoinCrewRequest request
     ) {
         return ApiResponse.success(crewService.joinCrew(userId, request));
+    }
+
+    @PatchMapping("/{crewId}")
+    public ApiResponse<UpdateCrewResponse> updateCrew(
+            @RequestHeader("X-USER-ID") UUID userId,
+            @PathVariable UUID crewId,
+            @Valid @RequestBody UpdateCrewRequest request
+    ) {
+        return ApiResponse.success(crewService.updateCrew(userId, crewId, request));
     }
 
 }

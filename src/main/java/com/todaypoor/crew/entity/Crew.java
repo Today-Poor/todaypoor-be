@@ -81,13 +81,6 @@ public class Crew extends BaseEntity {
         return crew;
     }
 
-    public void regenerateInviteCode(String inviteCode, LocalDateTime inviteCodeExpiresAt) {
-        validateInviteCode(inviteCode, inviteCodeExpiresAt);
-
-        this.inviteCode = inviteCode;
-        this.inviteCodeExpiresAt = inviteCodeExpiresAt;
-    }
-
     private static void validateCreate(
             String name, String inviteCode, LocalDateTime inviteCodeExpiresAt, AiMode aiMode, UUID ownerId, Integer maxMemberCount
     ) {
@@ -105,6 +98,29 @@ public class Crew extends BaseEntity {
         if (!inviteCodeExpiresAt.isAfter(LocalDateTime.now())) {
             throw new IllegalArgumentException("inviteCodeExpiresAt는 현재 시각 이후여야 합니다.");
         }
+    }
+
+    public void update(String name, String description, Integer maxMemberCount, AiMode aiMode) {
+        if (name != null) {
+            this.name = name;
+        }
+
+        this.description = description; // nullable 이므로, update 값이 null이어도 null로 수정 가능
+
+        if (maxMemberCount != null) {
+            this.maxMemberCount = maxMemberCount;
+        }
+
+        if (aiMode != null) {
+            this.aiMode = aiMode;
+        }
+    }
+
+    public void regenerateInviteCode(String inviteCode, LocalDateTime inviteCodeExpiresAt) {
+        validateInviteCode(inviteCode, inviteCodeExpiresAt);
+
+        this.inviteCode = inviteCode;
+        this.inviteCodeExpiresAt = inviteCodeExpiresAt;
     }
 
 }

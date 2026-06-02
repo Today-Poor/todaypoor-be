@@ -11,8 +11,10 @@ import lombok.extern.slf4j.Slf4j;
 
 import com.todaypoor.crew.dto.request.CreateCrewRequest;
 import com.todaypoor.crew.dto.request.JoinCrewRequest;
+import com.todaypoor.crew.dto.request.UpdateCrewRequest;
 import com.todaypoor.crew.dto.response.CreateCrewResponse;
 import com.todaypoor.crew.dto.response.JoinCrewResponse;
+import com.todaypoor.crew.dto.response.UpdateCrewResponse;
 import com.todaypoor.crew.entity.Crew;
 import com.todaypoor.crew.entity.CrewMember;
 import com.todaypoor.crew.entity.CrewRole;
@@ -29,6 +31,7 @@ public class CrewService {
 
     private final CrewRepository crewRepository;
     private final CrewMemberRepository crewMemberRepository;
+    private final CrewAuthorizationService crewAuthorizationService;
 
     private static final int INVITE_CODE_EXPIRE_DAYS = 7;
     private static final int INVITE_CODE_LENGTH = 8;
@@ -151,5 +154,70 @@ public class CrewService {
 
     private String normalizeInviteCode(String inviteCode) {
         return inviteCode.trim().toUpperCase();
+    }
+
+    @Transactional
+    public UpdateCrewResponse updateCrew(UUID userId, UUID crewId, UpdateCrewRequest request) {
+
+        validateUserId(userId);
+        validateCrewId(crewId);
+
+        Integer currentMemberCount = crewMemberRepository.countByCrewIdAndDeletedAtIsNull(crewId);
+        validateUpdateCrewRequest(request, currentMemberCount);
+
+        Crew crew = crewRepository.findByIdAndDeletedAtIsNull(crewId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CREW_NOT_FOUND));
+
+        String description = crew.getDescription();
+        if (request.description().isPresent()) {
+            description = request.description().orElse(null);
+        }
+
+        // 방장만 수정 가능
+        crewAuthorizationService.validateOwner(crewId, userId);
+
+        crew.update(request.name(), description, request.maxMemberCount(), request.aiMode());
+
+        return UpdateCrewResponse.of(crew, currentMemberCount);
+    }
+
+    private void validateCrewId(UUID crewId) {
+        if (crewId == null)  {
+            throw new IllegalArgumentException("crewId는 필수입니다.");
+        }
+    }
+
+    private void validateUpdateCrewRequest(UpdateCrewRequest request, Integer currentMemberCount) {
+        if (request == null) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
+        }
+
+        boolean hasName = request.name() != null;
+        boolean hasDescription = request.description().isPresent();
+        boolean hasMaxMemberCount = request.maxMemberCount() != null;
+        boolean hasAiMode = request.aiMode() != null;
+
+        // 최소 1개 이상은 변경이 있어야함 -> 아무것도 수정되지 않았다면 예외 발생
+        if (!hasName && !hasDescription && !hasMaxMemberCount && !hasAiMode) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
+        }
+
+        // 수정할 값이 넘어왔는데, 값이 비어있다면
+        if (hasName && request.name().isBlank()) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
+        }
+
+        if (hasMaxMemberCount) {
+            Integer maxMemberCount = request.maxMemberCount();
+
+            if (maxMemberCount < 1 || maxMemberCount > 5) {
+                throw new BusinessException(ErrorCode.INVALID_MAX_MEMBER_COUNT);
+            }
+
+            if (maxMemberCount < currentMemberCount) {
+                throw new BusinessException(ErrorCode.MAX_MEMBER_COUNT_LESS_THAN_CURRENT);
+            }
+        }
+
     }
 }
