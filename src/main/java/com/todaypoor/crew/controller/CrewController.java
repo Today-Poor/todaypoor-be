@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import jakarta.validation.Valid;
 
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,8 +19,9 @@ import com.todaypoor.crew.dto.request.CreateCrewRequest;
 import com.todaypoor.crew.dto.request.JoinCrewRequest;
 import com.todaypoor.crew.dto.request.UpdateCrewRequest;
 import com.todaypoor.crew.dto.response.CreateCrewResponse;
-import com.todaypoor.crew.dto.response.JoinCrewResponse;
 import com.todaypoor.crew.dto.response.InviteCodeResponse;
+import com.todaypoor.crew.dto.response.JoinCrewResponse;
+import com.todaypoor.crew.dto.response.MyCrewListResponse;
 import com.todaypoor.crew.dto.response.UpdateCrewResponse;
 import com.todaypoor.crew.service.CrewService;
 import com.todaypoor.global.response.ApiResponse;
@@ -70,6 +72,13 @@ public class CrewController {
             @PathVariable UUID crewId
     ) {
         return ApiResponse.success(crewService.getInviteCode(userId, crewId));
+    }
+
+    @GetMapping
+    public ApiResponse<MyCrewListResponse> getMyCrews(
+            @RequestHeader("X-USER-ID") UUID userId
+    ) {
+        return ApiResponse.success(crewService.getMyCrews(userId));
     }
 
 }

@@ -1,6 +1,7 @@
 package com.todaypoor.crew.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -13,8 +14,10 @@ import com.todaypoor.crew.dto.request.CreateCrewRequest;
 import com.todaypoor.crew.dto.request.JoinCrewRequest;
 import com.todaypoor.crew.dto.request.UpdateCrewRequest;
 import com.todaypoor.crew.dto.response.CreateCrewResponse;
-import com.todaypoor.crew.dto.response.JoinCrewResponse;
 import com.todaypoor.crew.dto.response.InviteCodeResponse;
+import com.todaypoor.crew.dto.response.JoinCrewResponse;
+import com.todaypoor.crew.dto.response.MyCrewListResponse;
+import com.todaypoor.crew.dto.response.MyCrewListResponse.MyCrewSummary;
 import com.todaypoor.crew.dto.response.UpdateCrewResponse;
 import com.todaypoor.crew.entity.Crew;
 import com.todaypoor.crew.entity.CrewMember;
@@ -64,6 +67,7 @@ public class CrewService {
 
         Integer currentMemberCount = 1;
 
+        // TODO: User 도메인 연동 후 owner의 nickname, profileImageUrl을 실제 사용자 정보로 채울 예정
         CreateCrewResponse.Owner owner = new CreateCrewResponse.Owner(
                 userId,
                 null,
@@ -267,5 +271,24 @@ public class CrewService {
 
         return InviteCodeResponse.from(crew);
 
+    }
+
+    public MyCrewListResponse getMyCrews(UUID userId) {
+
+        validateUserId(userId);
+
+        List<MyCrewSummary> crews = crewMemberRepository.findByUserIdAndDeletedAtIsNull(userId).stream()
+                .map(crewMember -> {
+                    Crew crew = crewRepository.findByIdAndDeletedAtIsNull(crewMember.getCrewId())
+                            .orElseThrow(() -> new BusinessException(ErrorCode.CREW_NOT_FOUND));
+
+                    Integer currentMemberCount =
+                            crewMemberRepository.countByCrewIdAndDeletedAtIsNull(crewMember.getCrewId());
+
+                    return MyCrewSummary.of(crew, crewMember, currentMemberCount);
+                })
+                .toList();
+
+        return MyCrewListResponse.of(crews);
     }
 }

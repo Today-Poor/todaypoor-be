@@ -1,6 +1,7 @@
 package com.todaypoor.crew.repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -33,4 +34,7 @@ public interface CrewMemberRepository extends JpaRepository<CrewMember, UUID> {
     int restoreMember(@Param("crewId") UUID crewId, @Param("userId") UUID userId, @Param("joinedAt") LocalDateTime joinedAt, @Param("role") String role);
 
     Integer countByCrewIdAndDeletedAtIsNull(UUID crewId);
+
+    // userId를 통해 해당 userId가 속한 crewId 정보를 찾을 수 있음
+    List<CrewMember> findByUserIdAndDeletedAtIsNull(UUID userId);
 }
