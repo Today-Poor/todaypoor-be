@@ -19,6 +19,7 @@ import com.todaypoor.crew.dto.request.JoinCrewRequest;
 import com.todaypoor.crew.dto.request.UpdateCrewRequest;
 import com.todaypoor.crew.dto.response.CreateCrewResponse;
 import com.todaypoor.crew.dto.response.JoinCrewResponse;
+import com.todaypoor.crew.dto.response.RegenerateInviteCodeResponse;
 import com.todaypoor.crew.dto.response.UpdateCrewResponse;
 import com.todaypoor.crew.service.CrewService;
 import com.todaypoor.global.response.ApiResponse;
@@ -53,6 +54,14 @@ public class CrewController {
             @Valid @RequestBody UpdateCrewRequest request
     ) {
         return ApiResponse.success(crewService.updateCrew(userId, crewId, request));
+    }
+
+    @PostMapping("/{crewId}/invite-code/reissue")
+    public ApiResponse<RegenerateInviteCodeResponse> reissueInviteCode(
+            @RequestHeader("X-USER-ID") UUID userId,
+            @PathVariable UUID crewId
+    ) {
+        return ApiResponse.success(crewService.reissueInviteCode(userId, crewId));
     }
 
 }

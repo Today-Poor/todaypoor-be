@@ -14,6 +14,7 @@ import com.todaypoor.crew.dto.request.JoinCrewRequest;
 import com.todaypoor.crew.dto.request.UpdateCrewRequest;
 import com.todaypoor.crew.dto.response.CreateCrewResponse;
 import com.todaypoor.crew.dto.response.JoinCrewResponse;
+import com.todaypoor.crew.dto.response.RegenerateInviteCodeResponse;
 import com.todaypoor.crew.dto.response.UpdateCrewResponse;
 import com.todaypoor.crew.entity.Crew;
 import com.todaypoor.crew.entity.CrewMember;
@@ -218,6 +219,27 @@ public class CrewService {
                 throw new BusinessException(ErrorCode.MAX_MEMBER_COUNT_LESS_THAN_CURRENT);
             }
         }
+
+    }
+
+    @Transactional
+    public RegenerateInviteCodeResponse reissueInviteCode(UUID userId, UUID crewId) {
+
+        validateUserId(userId);
+        validateCrewId(crewId);
+
+        // 방장만 초대코드 수동 재발급 가능
+        crewAuthorizationService.validateOwner(crewId, userId);
+
+        Crew crew = crewRepository.findByIdAndDeletedAtIsNull(crewId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CREW_NOT_FOUND));
+
+        String inviteCode = generateUniqueInviteCode();
+        LocalDateTime inviteCodeExpiresAt = LocalDateTime.now().plusDays(INVITE_CODE_EXPIRE_DAYS);
+
+        crew.regenerateInviteCode(inviteCode, inviteCodeExpiresAt);
+
+        return RegenerateInviteCodeResponse.from(crew);
 
     }
 }
