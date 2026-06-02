@@ -19,6 +19,7 @@ import com.todaypoor.crew.dto.request.CreateCrewRequest;
 import com.todaypoor.crew.dto.request.JoinCrewRequest;
 import com.todaypoor.crew.dto.request.UpdateCrewRequest;
 import com.todaypoor.crew.dto.response.CreateCrewResponse;
+import com.todaypoor.crew.dto.response.CrewDetailResponse;
 import com.todaypoor.crew.dto.response.InviteCodeResponse;
 import com.todaypoor.crew.dto.response.JoinCrewResponse;
 import com.todaypoor.crew.dto.response.MyCrewListResponse;
@@ -79,6 +80,14 @@ public class CrewController {
             @RequestHeader("X-USER-ID") UUID userId
     ) {
         return ApiResponse.success(crewService.getMyCrews(userId));
+    }
+
+    @GetMapping("/{crewId}/detail")
+    public ApiResponse<CrewDetailResponse> getCrewDetail(
+            @RequestHeader("X-USER-ID") UUID userId,
+            @PathVariable UUID crewId
+    ) {
+        return ApiResponse.success(crewService.getCrewDetail(userId, crewId));
     }
 
 }

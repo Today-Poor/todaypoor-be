@@ -14,6 +14,7 @@ import com.todaypoor.crew.dto.request.CreateCrewRequest;
 import com.todaypoor.crew.dto.request.JoinCrewRequest;
 import com.todaypoor.crew.dto.request.UpdateCrewRequest;
 import com.todaypoor.crew.dto.response.CreateCrewResponse;
+import com.todaypoor.crew.dto.response.CrewDetailResponse;
 import com.todaypoor.crew.dto.response.InviteCodeResponse;
 import com.todaypoor.crew.dto.response.JoinCrewResponse;
 import com.todaypoor.crew.dto.response.MyCrewListResponse;
@@ -291,4 +292,27 @@ public class CrewService {
 
         return MyCrewListResponse.of(crews);
     }
+
+    public CrewDetailResponse getCrewDetail(UUID userId, UUID crewId) {
+        validateUserId(userId);
+        validateCrewId(crewId);
+
+        crewAuthorizationService.validateMember(crewId, userId);
+
+        Crew crew = crewRepository.findByIdAndDeletedAtIsNull(crewId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CREW_NOT_FOUND));
+
+        // TODO: User 도메인 연동 후 owner의 nickname, profileImageUrl을 실제 사용자 정보로 채울 예정
+        CrewDetailResponse.Owner owner = new CrewDetailResponse.Owner(
+                userId,
+                null,
+                null
+        );
+
+        Integer currentMemberCount = crewMemberRepository.countByCrewIdAndDeletedAtIsNull(crewId);
+
+        return CrewDetailResponse.of(crew, owner, currentMemberCount);
+    }
+
+
 }
