@@ -331,6 +331,7 @@ public class CrewService {
         Crew crew = crewRepository.findByIdAndDeletedAtIsNull(crewId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CREW_NOT_FOUND));
 
+        // TODO: Crew softDelete 시 CrewMember도 softDelete 예정
         crew.softDelete();
     }
 
