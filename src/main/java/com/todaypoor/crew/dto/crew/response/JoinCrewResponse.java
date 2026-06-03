@@ -1,4 +1,4 @@
-package com.todaypoor.crew.dto.response;
+package com.todaypoor.crew.dto.crew.response;
 
 import java.time.LocalDateTime;
 import java.util.UUID;

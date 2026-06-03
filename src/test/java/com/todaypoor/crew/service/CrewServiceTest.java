@@ -6,24 +6,35 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.BDDMockito.given;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.openapitools.jackson.nullable.JsonNullable;
 
-import com.todaypoor.crew.dto.request.CreateCrewRequest;
-import com.todaypoor.crew.dto.request.JoinCrewRequest;
-import com.todaypoor.crew.dto.request.UpdateCrewRequest;
-import com.todaypoor.crew.dto.response.CreateCrewResponse;
-import com.todaypoor.crew.dto.response.CrewDetailResponse;
-import com.todaypoor.crew.dto.response.CrewMainResponse;
-import com.todaypoor.crew.dto.response.InviteCodeResponse;
-import com.todaypoor.crew.dto.response.JoinCrewResponse;
-import com.todaypoor.crew.dto.response.MyCrewListResponse;
-import com.todaypoor.crew.dto.response.UpdateCrewResponse;
+import com.todaypoor.crew.dto.crew.request.CreateCrewRequest;
+import com.todaypoor.crew.dto.crew.request.JoinCrewRequest;
+import com.todaypoor.crew.dto.crew.request.UpdateCrewRequest;
+import com.todaypoor.crew.dto.crew.response.CreateCrewResponse;
+import com.todaypoor.crew.dto.crew.response.CrewDetailResponse;
+import com.todaypoor.crew.dto.crew.response.CrewMainResponse;
+import com.todaypoor.crew.dto.crew.response.InviteCodeResponse;
+import com.todaypoor.crew.dto.crew.response.JoinCrewResponse;
+import com.todaypoor.crew.dto.crew.response.MyCrewListResponse;
+import com.todaypoor.crew.dto.crew.response.UpdateCrewResponse;
 import com.todaypoor.crew.entity.AiMode;
 import com.todaypoor.crew.entity.Crew;
 import com.todaypoor.crew.entity.CrewMember;
@@ -36,18 +47,6 @@ import com.todaypoor.expense.entity.ExpenseVisibility;
 import com.todaypoor.expense.repository.ExpenseRepository;
 import com.todaypoor.global.exception.BusinessException;
 import com.todaypoor.global.exception.ErrorCode;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class CrewServiceTest {

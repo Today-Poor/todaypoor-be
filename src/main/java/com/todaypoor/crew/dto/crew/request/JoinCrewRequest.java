@@ -1,4 +1,4 @@
-package com.todaypoor.crew.dto.request;
+package com.todaypoor.crew.dto.crew.request;
 
 import jakarta.validation.constraints.NotBlank;
 

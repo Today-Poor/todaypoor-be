@@ -16,16 +16,16 @@ import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
 
-import com.todaypoor.crew.dto.request.CreateCrewRequest;
-import com.todaypoor.crew.dto.request.JoinCrewRequest;
-import com.todaypoor.crew.dto.request.UpdateCrewRequest;
-import com.todaypoor.crew.dto.response.CreateCrewResponse;
-import com.todaypoor.crew.dto.response.CrewDetailResponse;
-import com.todaypoor.crew.dto.response.CrewMainResponse;
-import com.todaypoor.crew.dto.response.InviteCodeResponse;
-import com.todaypoor.crew.dto.response.JoinCrewResponse;
-import com.todaypoor.crew.dto.response.MyCrewListResponse;
-import com.todaypoor.crew.dto.response.UpdateCrewResponse;
+import com.todaypoor.crew.dto.crew.request.CreateCrewRequest;
+import com.todaypoor.crew.dto.crew.request.JoinCrewRequest;
+import com.todaypoor.crew.dto.crew.request.UpdateCrewRequest;
+import com.todaypoor.crew.dto.crew.response.CreateCrewResponse;
+import com.todaypoor.crew.dto.crew.response.CrewDetailResponse;
+import com.todaypoor.crew.dto.crew.response.CrewMainResponse;
+import com.todaypoor.crew.dto.crew.response.InviteCodeResponse;
+import com.todaypoor.crew.dto.crew.response.JoinCrewResponse;
+import com.todaypoor.crew.dto.crew.response.MyCrewListResponse;
+import com.todaypoor.crew.dto.crew.response.UpdateCrewResponse;
 import com.todaypoor.crew.service.CrewService;
 import com.todaypoor.global.response.ApiResponse;
 
