@@ -1,0 +1,112 @@
+package com.todaypoor.crew.controller;
+
+import java.util.UUID;
+
+import jakarta.validation.Valid;
+
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import lombok.RequiredArgsConstructor;
+
+import com.todaypoor.crew.dto.crew.request.CreateCrewRequest;
+import com.todaypoor.crew.dto.crew.request.JoinCrewRequest;
+import com.todaypoor.crew.dto.crew.request.UpdateCrewRequest;
+import com.todaypoor.crew.dto.crew.response.CreateCrewResponse;
+import com.todaypoor.crew.dto.crew.response.CrewDetailResponse;
+import com.todaypoor.crew.dto.crew.response.CrewMainResponse;
+import com.todaypoor.crew.dto.crew.response.InviteCodeResponse;
+import com.todaypoor.crew.dto.crew.response.JoinCrewResponse;
+import com.todaypoor.crew.dto.crew.response.MyCrewListResponse;
+import com.todaypoor.crew.dto.crew.response.UpdateCrewResponse;
+import com.todaypoor.crew.service.CrewService;
+import com.todaypoor.global.response.ApiResponse;
+
+@RestController
+@RequestMapping("/api/crews")
+@RequiredArgsConstructor
+public class CrewController {
+
+    private final CrewService crewService;
+
+    @PostMapping
+    public ApiResponse<CreateCrewResponse> createCrew(
+            @RequestHeader("X-USER-ID") UUID userId,
+            @Valid @RequestBody CreateCrewRequest request
+    ) {
+        return ApiResponse.success(crewService.createCrew(userId, request));
+    }
+
+    @PostMapping("/join")
+    public ApiResponse<JoinCrewResponse> joinCrew(
+            @RequestHeader("X-USER-ID") UUID userId,
+            @Valid @RequestBody JoinCrewRequest request
+    ) {
+        return ApiResponse.success(crewService.joinCrew(userId, request));
+    }
+
+    @PatchMapping("/{crewId}")
+    public ApiResponse<UpdateCrewResponse> updateCrew(
+            @RequestHeader("X-USER-ID") UUID userId,
+            @PathVariable UUID crewId,
+            @Valid @RequestBody UpdateCrewRequest request
+    ) {
+        return ApiResponse.success(crewService.updateCrew(userId, crewId, request));
+    }
+
+    @PostMapping("/{crewId}/invite-code/reissue")
+    public ApiResponse<InviteCodeResponse> reissueInviteCode(
+            @RequestHeader("X-USER-ID") UUID userId,
+            @PathVariable UUID crewId
+    ) {
+        return ApiResponse.success(crewService.reissueInviteCode(userId, crewId));
+    }
+
+    @PostMapping("/{crewId}/invite-code")
+    public ApiResponse<InviteCodeResponse> getInviteCode(
+            @RequestHeader("X-USER-ID") UUID userId,
+            @PathVariable UUID crewId
+    ) {
+        return ApiResponse.success(crewService.getInviteCode(userId, crewId));
+    }
+
+    @GetMapping
+    public ApiResponse<MyCrewListResponse> getMyCrews(
+            @RequestHeader("X-USER-ID") UUID userId
+    ) {
+        return ApiResponse.success(crewService.getMyCrews(userId));
+    }
+
+    @GetMapping("/{crewId}/detail")
+    public ApiResponse<CrewDetailResponse> getCrewDetail(
+            @RequestHeader("X-USER-ID") UUID userId,
+            @PathVariable UUID crewId
+    ) {
+        return ApiResponse.success(crewService.getCrewDetail(userId, crewId));
+    }
+
+    @DeleteMapping("/{crewId}")
+    public ApiResponse<Void> deleteCrew(
+            @RequestHeader("X-USER-ID") UUID userId,
+            @PathVariable UUID crewId
+    ) {
+        crewService.deleteCrew(userId, crewId);
+        return ApiResponse.success(null);
+    }
+
+    @GetMapping("/{crewId}")
+    public ApiResponse<CrewMainResponse> getCrewMain(
+            @RequestHeader("X-USER-ID") UUID userId,
+            @PathVariable UUID crewId
+    ) {
+        return ApiResponse.success(crewService.getCrewMain(userId, crewId));
+    }
+
+}

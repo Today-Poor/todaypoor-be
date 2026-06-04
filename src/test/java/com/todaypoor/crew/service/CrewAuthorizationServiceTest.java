@@ -76,7 +76,7 @@ class CrewAuthorizationServiceTest {
                 () -> crewAuthorizationService.validateMember(crewId, userId)
         );
 
-        assertEquals(ErrorCode.NOT_CREW_MEMBER, exception.getErrorCode());
+        assertEquals(ErrorCode.CREW_MEMBER_NOT_FOUND, exception.getErrorCode());
     }
 
     @Test

@@ -13,4 +13,7 @@ public interface CrewRepository extends JpaRepository<Crew, UUID> {
 
     Optional<Crew> findByIdAndDeletedAtIsNull(UUID id);
 
+    boolean existsByInviteCodeAndDeletedAtIsNull(String inviteCode);
+
+    Optional<Crew> findByInviteCodeAndDeletedAtIsNull(String inviteCode);
 }
