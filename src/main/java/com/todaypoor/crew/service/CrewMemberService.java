@@ -95,7 +95,26 @@ public class CrewMemberService {
         crewMember.softDelete();
     }
 
+    @Transactional
+    public void removeCrewMember(UUID userId, UUID crewId, UUID crewMemberId) {
 
+        validateUserId(userId);
+        validateCrewId(crewId);
+        validateCrewMemberId(crewMemberId);
+
+        // 방장만 강퇴시킬 수 있음
+        crewAuthorizationService.validateOwner(crewId, userId);
+
+        // 방장이 자기 자신 강퇴 불가능하도록
+        if (userId.equals(crewMemberId)) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
+        }
+
+        CrewMember crewMember = crewAuthorizationService.validateMember(crewId, crewMemberId);
+
+        crewMember.softDelete();
+
+    }
 
 
 }

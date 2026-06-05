@@ -50,4 +50,15 @@ public class CrewMemberController {
         return ApiResponse.success(null);
     }
 
+    @DeleteMapping("/{crewId}/members/{userId}")
+    public ApiResponse<Void> removeCrewMember(
+        @RequestHeader("X-USER-ID") UUID userId,
+        @PathVariable("crewId") UUID crewId,
+        @PathVariable("userId") UUID crewMemberId
+
+    ) {
+        crewMemberService.removeCrewMember(userId, crewId, crewMemberId);
+        return ApiResponse.success(null);
+    }
+
 }
