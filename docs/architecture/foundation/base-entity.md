@@ -23,7 +23,20 @@
 1. 엔티티는 `BaseEntity`를 상속한다.
 2. 삭제 API는 `delete()` 대신 `softDelete()` 사용을 기본으로 한다.
 3. 조회 시 `deletedAt is null` 조건을 기본 적용한다.
+    - 엔티티 레벨에 `@SQLRestriction("deleted_at IS NULL")`이 적용되어 있어, 일반적인 JPA 조회(findAll, findById 등) 시 자동으로 삭제된 데이터가 제외됩니다.
 4. 복구가 필요한 경우에만 `restore()`를 호출한다.
+
+## 삭제된 데이터 조회하기
+`@SQLRestriction`이 걸려 있으면 일반적인 Spring Data JPA 메서드로는 삭제된 데이터를 찾을 수 없습니다. 재가입이나 데이터 복구 로직 등에서 삭제된 데이터가 필요한 경우 아래 방식을 사용합니다.
+
+1. **Native Query 사용**: `@Query(value = "...", nativeQuery = true)`를 사용하여 직접 SQL을 작성합니다.
+2. **별도 Repository 메서드**: `deleted_at`이 포함된 조건을 명시적으로 쿼리하는 메서드를 정의합니다.
+
+예시 (CrewMemberRepository):
+```java
+@Query(value = "SELECT * FROM crew_member m WHERE m.crew_id = :crewId AND m.user_id = :userId AND m.deleted_at IS NOT NULL", nativeQuery = true)
+Optional<CrewMember> findDeletedMember(UUID crewId, UUID userId);
+```
 
 ## 엔티티 예시
 ```java

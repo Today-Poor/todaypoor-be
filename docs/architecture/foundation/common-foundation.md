@@ -13,12 +13,14 @@
 ## 목차
 1. [패키지 구조 복습](#1-패키지-구조-복습)
 2. [BaseEntity 규칙](#2-baseentity-규칙)
-3. [응답 포맷 작성](#3-응답-포맷-작성)
-4. [예외 던지는 방법](#4-예외-던지는-방법)
-5. [검증 실패 처리 규칙](#5-검증-실패-처리-규칙)
-6. [Security 401/403 포맷 통일](#6-security-401403-포맷-통일)
-7. [테스트 작성 기준](#7-테스트-작성-기준)
-8. [실전 예시](#8-실전-예시)
+3. [도메인 서비스 분리 원칙](#3-도메인-서비스-분리-원칙)
+4. [권한 검증 중앙화 패턴](#4-권한-검증-중앙화-패턴)
+5. [응답 포맷 작성](#5-응답-포맷-작성)
+6. [예외 던지는 방법](#6-예외-던지는-방법)
+7. [검증 실패 처리 규칙](#7-검증-실패-처리-규칙)
+8. [Security 401/403 포맷 통일](#8-security-401403-포맷-통일)
+9. [테스트 작성 기준](#9-테스트-작성-기준)
+10. [실전 예시](#10-실전-예시)
 
 ---
 
@@ -53,7 +55,40 @@
 
 ---
 
-## 3. 응답 포맷 작성
+## 3. 도메인 서비스 분리 원칙
+
+엔티티의 복잡도가 높아지면 책임을 명확히 하기 위해 서비스를 분리합니다.
+
+1. **Entity Service (Core)**: 엔티티 자체의 생성, 수정, 정보 조회를 담당합니다. (예: `CrewService`)
+2. **Relationship/Action Service**: 엔티티 간의 관계나 특정 액션(가입, 탈퇴, 강퇴 등)을 담당합니다. (예: `CrewMemberService`)
+
+**효과**:
+- 단일 책임 원칙(SRP) 준수 및 서비스 클래스 비대화 방지
+- 도메인별 API 경로(`Controller`)와의 일치성 향상
+
+---
+
+## 4. 권한 검증 중앙화 패턴
+
+공통으로 사용되는 권한 체크 로직은 `~AuthorizationService`로 분리하여 관리합니다.
+
+### 구현 가이드
+- **중앙화**: 여러 서비스에서 중복되는 `validateOwner`, `validateMember` 등을 한 곳에서 관리합니다.
+- **반환값 활용**: 검증 메서드는 단순히 예외를 던지는 것에 그치지 않고, **조회된 엔티티를 반환**하도록 설계합니다.
+- **최적화**: 호출하는 쪽에서는 반환된 엔티티를 변수에 담아 바로 사용하여 불필요한 DB 재조회를 방지합니다.
+
+```java
+// 호출 예시
+public CrewMemberDetailResponse getDetail(UUID userId, UUID crewId, UUID targetId) {
+    crewAuthService.validateMember(crewId, userId); // 요청자 권한 확인
+    CrewMember target = crewAuthService.validateMember(crewId, targetId); // 대상 조회 및 반환값 활용
+    return CrewMemberDetailResponse.from(target);
+}
+```
+
+---
+
+## 5. 응답 포맷 작성
 
 ### 성공
 ```json
@@ -92,7 +127,7 @@
 
 ---
 
-## 4. 예외 던지는 방법
+## 6. 예외 던지는 방법
 
 서비스/도메인 로직에서:
 ```java
@@ -107,7 +142,7 @@ if (crew == null) {
 
 ---
 
-## 5. 검증 실패 처리 규칙
+## 7. 검증 실패 처리 규칙
 
 아래 예외는 전부 `INVALID_REQUEST(400)`으로 통일:
 - `MethodArgumentNotValidException`
@@ -123,7 +158,7 @@ if (crew == null) {
 
 ---
 
-## 6. Security 401/403 포맷 통일
+## 8. Security 401/403 포맷 통일
 
 `@RestControllerAdvice`는 필터 이전 예외를 못 잡기 때문에 Security 핸들러를 별도 구현합니다.
 
@@ -141,7 +176,7 @@ if (crew == null) {
 
 ---
 
-## 7. 테스트 작성 기준
+## 9. 테스트 작성 기준
 
 현재 테스트 파일:
 - `src/test/java/com/todaypoor/global/exception/GlobalExceptionHandlerTest.java`
@@ -153,7 +188,7 @@ if (crew == null) {
 
 ---
 
-## 8. 실전 예시
+## 10. 실전 예시
 
 컨트롤러:
 ```java
