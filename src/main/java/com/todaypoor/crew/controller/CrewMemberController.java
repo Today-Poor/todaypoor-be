@@ -2,15 +2,21 @@ package com.todaypoor.crew.controller;
 
 import java.util.UUID;
 
+import jakarta.validation.Valid;
+
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
 
+import com.todaypoor.crew.dto.crew.request.JoinCrewRequest;
+import com.todaypoor.crew.dto.crew.response.JoinCrewResponse;
 import com.todaypoor.crew.dto.crewMember.response.CrewMemberDetailResponse;
 import com.todaypoor.crew.dto.crewMember.response.CrewMemberListResponse;
 import com.todaypoor.crew.service.CrewMemberService;
@@ -22,6 +28,14 @@ import com.todaypoor.global.response.ApiResponse;
 public class CrewMemberController {
 
     private final CrewMemberService crewMemberService;
+
+    @PostMapping("/join")
+    public ApiResponse<JoinCrewResponse> joinCrew(
+            @RequestHeader("X-USER-ID") UUID userId,
+            @Valid @RequestBody JoinCrewRequest request
+    ) {
+        return ApiResponse.success(crewMemberService.joinCrew(userId, request));
+    }
 
     @GetMapping("/{crewId}/members")
     public ApiResponse<CrewMemberListResponse> getCrewMembers(

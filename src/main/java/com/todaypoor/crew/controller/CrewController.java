@@ -17,13 +17,11 @@ import org.springframework.web.bind.annotation.RestController;
 import lombok.RequiredArgsConstructor;
 
 import com.todaypoor.crew.dto.crew.request.CreateCrewRequest;
-import com.todaypoor.crew.dto.crew.request.JoinCrewRequest;
 import com.todaypoor.crew.dto.crew.request.UpdateCrewRequest;
 import com.todaypoor.crew.dto.crew.response.CreateCrewResponse;
 import com.todaypoor.crew.dto.crew.response.CrewDetailResponse;
 import com.todaypoor.crew.dto.crew.response.CrewMainResponse;
 import com.todaypoor.crew.dto.crew.response.InviteCodeResponse;
-import com.todaypoor.crew.dto.crew.response.JoinCrewResponse;
 import com.todaypoor.crew.dto.crew.response.MyCrewListResponse;
 import com.todaypoor.crew.dto.crew.response.UpdateCrewResponse;
 import com.todaypoor.crew.service.CrewService;
@@ -42,14 +40,6 @@ public class CrewController {
             @Valid @RequestBody CreateCrewRequest request
     ) {
         return ApiResponse.success(crewService.createCrew(userId, request));
-    }
-
-    @PostMapping("/join")
-    public ApiResponse<JoinCrewResponse> joinCrew(
-            @RequestHeader("X-USER-ID") UUID userId,
-            @Valid @RequestBody JoinCrewRequest request
-    ) {
-        return ApiResponse.success(crewService.joinCrew(userId, request));
     }
 
     @PatchMapping("/{crewId}")

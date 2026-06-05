@@ -1,5 +1,6 @@
 package com.todaypoor.crew.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -9,6 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import com.todaypoor.crew.dto.crew.request.JoinCrewRequest;
+import com.todaypoor.crew.dto.crew.response.JoinCrewResponse;
 import com.todaypoor.crew.dto.crewMember.response.CrewMemberDetailResponse;
 import com.todaypoor.crew.dto.crewMember.response.CrewMemberListResponse;
 import com.todaypoor.crew.dto.crewMember.response.CrewMemberListResponse.CrewMemberList;
@@ -29,6 +32,49 @@ public class CrewMemberService {
     private final CrewRepository crewRepository;
     private final CrewMemberRepository crewMemberRepository;
     private final CrewAuthorizationService crewAuthorizationService;
+
+    @Transactional
+    public JoinCrewResponse joinCrew(UUID userId, JoinCrewRequest request) {
+
+        validateUserId(userId);
+        validateJoinCrewRequest(request);
+
+        String inviteCode = normalizeInviteCode(request.inviteCode());
+
+        Crew crew = crewRepository.findByInviteCodeAndDeletedAtIsNull(inviteCode)
+                .orElseThrow(() -> new BusinessException(ErrorCode.CREW_NOT_FOUND));
+
+        if (crew.getInviteCodeExpiresAt() == null || !crew.getInviteCodeExpiresAt().isAfter(LocalDateTime.now())) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST); // 만료된 초대코드
+        }
+
+        if (crewMemberRepository.existsByCrewIdAndUserIdAndDeletedAtIsNull(crew.getId(), userId)) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST); // 이미 가입된 메머버
+        }
+
+        CrewMember crewMember = crewMemberRepository.findDeletedMember(crew.getId(), userId)
+                .map(deletedMember -> { // soft delete 된 멤버 값이 있을 때만 수행
+                    deletedMember.restoreMember(CrewRole.MEMBER);
+                    return crewMemberRepository.save(deletedMember);
+                })
+                .orElseGet(() -> crewMemberRepository.save(CrewMember.createMember(crew.getId(), userId)));
+
+        Integer currentMemberCount = crewMemberRepository.countByCrewIdAndDeletedAtIsNull(crew.getId());
+
+        return JoinCrewResponse.of(crew, crewMember, currentMemberCount);
+    }
+
+    private void validateJoinCrewRequest(JoinCrewRequest request) {
+        if (request == null) throw new IllegalArgumentException("request는 필수입니다.");
+
+        if (request.inviteCode() == null || request.inviteCode().isBlank()) {
+            throw new IllegalArgumentException("inviteCode는 필수입니다.");
+        }
+    }
+
+    private String normalizeInviteCode(String inviteCode) {
+        return inviteCode.trim().toUpperCase();
+    }
 
     public CrewMemberListResponse getCrewMembers(UUID userId, UUID crewId) {
 
