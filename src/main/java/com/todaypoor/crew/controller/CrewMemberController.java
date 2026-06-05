@@ -27,7 +27,7 @@ public class CrewMemberController {
             @RequestHeader("X-USER-ID") UUID userId,
             @PathVariable("crewId") UUID crewId
     ) {
-        return ApiResponse.success(crewMemberService.getCrewMembers(userId, crewId);
+        return ApiResponse.success(crewMemberService.getCrewMembers(userId, crewId));
     }
 
     @GetMapping("/{crewId}/members/{userId}")
