@@ -2,6 +2,7 @@ package com.todaypoor.crew.controller;
 
 import java.util.UUID;
 
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -37,6 +38,16 @@ public class CrewMemberController {
             @PathVariable("userId") UUID crewMemberId
     ) {
         return ApiResponse.success(crewMemberService.getCrewMemberDetail(userId, crewId, crewMemberId));
+    }
+
+    @DeleteMapping("/{crewId}/members/me")
+    public ApiResponse<Void> leaveCrew(
+            @RequestHeader("X-USER-ID") UUID userId,
+            @PathVariable("crewId") UUID crewId
+
+    ) {
+        crewMemberService.leaveCrew(userId, crewId);
+        return ApiResponse.success(null);
     }
 
 }

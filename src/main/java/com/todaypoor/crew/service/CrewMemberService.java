@@ -14,6 +14,7 @@ import com.todaypoor.crew.dto.crewMember.response.CrewMemberListResponse;
 import com.todaypoor.crew.dto.crewMember.response.CrewMemberListResponse.CrewMemberList;
 import com.todaypoor.crew.entity.Crew;
 import com.todaypoor.crew.entity.CrewMember;
+import com.todaypoor.crew.entity.CrewRole;
 import com.todaypoor.crew.repository.CrewMemberRepository;
 import com.todaypoor.crew.repository.CrewRepository;
 import com.todaypoor.global.exception.BusinessException;
@@ -79,6 +80,22 @@ public class CrewMemberService {
         if (crewMemberId == null)  {
             throw new IllegalArgumentException("crewMemberId는 필수입니다.");
         }
+    }
+
+    @Transactional
+    public void leaveCrew(UUID userId, UUID crewId) {
+
+        validateUserId(userId);
+        validateCrewId(crewId);
+
+        CrewMember crewMember = crewAuthorizationService.validateMember(crewId, userId);
+
+        // 방장이라면 탈퇴할 수 없음
+        if (crewMember.getRole() == CrewRole.OWNER) {
+            throw new BusinessException(ErrorCode.OWNER_CANNOT_LEAVE);
+        }
+
+        crewMember.softDelete();
     }
 
 
