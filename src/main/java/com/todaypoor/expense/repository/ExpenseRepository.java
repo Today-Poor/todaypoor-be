@@ -30,4 +30,10 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end
     );
+
+    // 크루 멤버의 가장 최근 소비 내역 조회
+    Optional<Expense> findFirstByCrewIdAndUserIdAndDeletedAtIsNullOrderBySpentAtDesc(
+            UUID crewId,
+            UUID userId
+    );
 }
