@@ -83,6 +83,6 @@ public class CrewMember extends BaseEntity {
         if (role == null) throw new IllegalArgumentException("role은 필수입니다.");
         this.role = role;
         this.joinedAt = LocalDateTime.now();
-        this.restore(); // BaseEntity
+        this.restore(); // BaseEntity (deletedAt = null)
     }
 }

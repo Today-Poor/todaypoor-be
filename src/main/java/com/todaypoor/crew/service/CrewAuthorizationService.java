@@ -26,7 +26,7 @@ public class CrewAuthorizationService {
         validateCrewExists(crewId);
 
         return crewMemberRepository.findByCrewIdAndUserIdAndDeletedAtIsNull(crewId, userId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.NOT_CREW_MEMBER));
+                .orElseThrow(() -> new BusinessException(ErrorCode.CREW_MEMBER_NOT_FOUND));
     }
 
     public CrewMember validateOwner(UUID crewId, UUID userId) {
