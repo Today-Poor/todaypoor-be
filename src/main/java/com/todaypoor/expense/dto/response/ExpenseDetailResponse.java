@@ -20,7 +20,6 @@ public class ExpenseDetailResponse {
     private UUID crewId;
     private UserInfo user;
     private OcrResultInfo ocrResult;
-    private String emoji;
     private ExpenseCategory category;
     private Integer amount;
     private String merchant;
@@ -30,13 +29,14 @@ public class ExpenseDetailResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public static ExpenseDetailResponse of(Expense expense, UserInfo user, OcrResultInfo ocrResult, String emoji) {
+    public static ExpenseDetailResponse of(Expense expense, UserInfo user, OcrResultInfo ocrResult) {
+        // TODO: visibility(공개 범위) 및 조회자 권한에 따른 데이터 마스킹(*** 처리) 로직 추가 필요
+
         return new ExpenseDetailResponse(
                 expense.getId(),
                 expense.getCrewId(),
                 user,
                 ocrResult,
-                emoji,
                 expense.getCategory(),
                 expense.getAmount(),
                 expense.getMerchant(),

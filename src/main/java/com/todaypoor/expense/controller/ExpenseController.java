@@ -31,10 +31,9 @@ public class ExpenseController {
     @PostMapping("/expenses")
     public ResponseEntity<ApiResponse<ExpenseSaveResponse>> saveExpenses(
             @PathVariable UUID crewId,
+            @RequestHeader("X-USER-ID") UUID userId,
             @Valid @RequestBody ExpenseSaveRequest request
     ) {
-        UUID userId = UUID.randomUUID();
-
         ExpenseSaveResponse response = expenseService.saveExpenses(userId, crewId, request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
@@ -44,10 +43,9 @@ public class ExpenseController {
     public ResponseEntity<ApiResponse<ExpenseUpdateResponse>> updateExpense(
             @PathVariable UUID crewId,
             @PathVariable UUID expenseId,
+            @RequestHeader("X-USER-ID") UUID userId,
             @Valid @RequestBody ExpenseUpdateRequest request
     ) {
-        UUID userId = UUID.randomUUID();
-
         ExpenseUpdateResponse response = expenseService.updateExpense(userId, crewId, expenseId, request);
 
         return ResponseEntity.ok(ApiResponse.success(response));
@@ -56,10 +54,9 @@ public class ExpenseController {
     @DeleteMapping("/expenses/{expenseId}")
     public ResponseEntity<ApiResponse<Void>> deleteExpense(
             @PathVariable UUID crewId,
-            @PathVariable UUID expenseId
+            @PathVariable UUID expenseId,
+            @RequestHeader("X-USER-ID") UUID userId
     ) {
-        UUID userId = UUID.randomUUID();
-
         expenseService.deleteExpense(userId, crewId, expenseId);
 
         return ResponseEntity.ok(ApiResponse.success(null));
@@ -93,9 +90,9 @@ public class ExpenseController {
     @PostMapping(value = "/expenses/ocr", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<OcrAnalyzeResponse>> analyzeReceipt(
             @PathVariable UUID crewId,
+            @RequestHeader("X-USER-ID") UUID userId,
             @RequestPart("image") MultipartFile image // 키값은 api명세서에 image라고 적어둠.
     ) {
-        UUID userId = UUID.randomUUID();
 
         if (image == null || image.isEmpty()) {
             throw new IllegalArgumentException("이미지 파일이 없습니다.");

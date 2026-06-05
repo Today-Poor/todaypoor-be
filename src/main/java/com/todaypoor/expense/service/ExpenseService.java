@@ -37,7 +37,15 @@ public class ExpenseService {
 
     @Transactional
     public ExpenseSaveResponse saveExpenses(UUID userId, UUID crewId, ExpenseSaveRequest request) {
-        UUID ocrResultId = UUID.fromString(request.getOcrResultId());
+        UUID ocrResultId;
+        try {
+            ocrResultId = UUID.fromString(request.getOcrResultId());
+        } catch (IllegalArgumentException e) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST);
+        }
+
+        ocrResultRepository.findById(ocrResultId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.OCR_RESULT_NOT_FOUND));
 
         List<Expense> expensesToSave = request.getExpenses().stream()
                 .map(detail -> createExpenseEntity(userId, crewId, ocrResultId, detail))
@@ -67,6 +75,10 @@ public class ExpenseService {
         Expense expense = expenseRepository.findById(expenseId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.EXPENSE_NOT_FOUND));
 
+        if (!expense.getCrewId().equals(crewId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
+
         if (!expense.getUserId().equals(userId)) {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
@@ -88,11 +100,16 @@ public class ExpenseService {
         Expense expense = expenseRepository.findById(expenseId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.EXPENSE_NOT_FOUND));
 
+        if (!expense.getCrewId().equals(crewId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
+
         if (!expense.getUserId().equals(userId)) {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
 
-        expenseRepository.delete(expense);
+        expense.softDelete();
+        expenseRepository.save(expense);
     }
 
     public MemberExpenseListResponse getMemberExpenses(UUID crewId, UUID userId, LocalDate date, Pageable pageable) {
@@ -106,6 +123,7 @@ public class ExpenseService {
         long totalAmount = expenseRepository.sumAmountByCrewIdAndUserIdAndDate(
                 crewId, userId, startOfDay, endOfDay).orElse(0L);
 
+        // TODO: 크루/유저 도메인 연동 후 실제 데이터로 교체
         String crewName = "거지방 1조";
         String nickname = "철수";
         String profileImageUrl = "https://image-url.com/1.png";
@@ -124,12 +142,12 @@ public class ExpenseService {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
 
-        //타 도메인 데이터 (유저 정보, OCR 결과) 임시 하드코딩 - 나중에 연동 해줘야함.
+        // TODO: 유저 도메인 연동 후 실제 데이터로 교체
         ExpenseDetailResponse.UserInfo userInfo = ExpenseDetailResponse.UserInfo.of(
                 expense.getUserId(), "철수", "https://image-url.com/1.png"
         );
 
-        //여기도 하드코딩 해놨어 여원아... 이거 맞지? 첨해봐서 몰루?
+        // TODO: OCR 도메인 연동 후 실제 데이터로 교체
         ExpenseDetailResponse.OcrResultInfo ocrInfo = null;
         if (expense.getOcrResultId() != null) {
             ocrInfo = ExpenseDetailResponse.OcrResultInfo.of(
@@ -139,9 +157,7 @@ public class ExpenseService {
             );
         }
 
-        String emoji = "🍔"; // 나중에 카테고리별 분기 처리(Enum 내부 메서드 활용 등) 필요, 일단 하드코딩했다잉
-
-        return ExpenseDetailResponse.of(expense, userInfo, ocrInfo, emoji);
+        return ExpenseDetailResponse.of(expense, userInfo, ocrInfo);
     }
 
     @Transactional
