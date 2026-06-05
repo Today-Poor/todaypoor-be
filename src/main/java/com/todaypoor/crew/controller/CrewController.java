@@ -4,6 +4,8 @@ import java.util.UUID;
 
 import jakarta.validation.Valid;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -35,68 +37,69 @@ public class CrewController {
     private final CrewService crewService;
 
     @PostMapping
-    public ApiResponse<CreateCrewResponse> createCrew(
+    public ResponseEntity<ApiResponse<CreateCrewResponse>> createCrew(
             @RequestHeader("X-USER-ID") UUID userId,
             @Valid @RequestBody CreateCrewRequest request
     ) {
-        return ApiResponse.success(crewService.createCrew(userId, request));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(crewService.createCrew(userId, request)));
     }
 
     @PatchMapping("/{crewId}")
-    public ApiResponse<UpdateCrewResponse> updateCrew(
+    public ResponseEntity<ApiResponse<UpdateCrewResponse>> updateCrew(
             @RequestHeader("X-USER-ID") UUID userId,
             @PathVariable UUID crewId,
             @Valid @RequestBody UpdateCrewRequest request
     ) {
-        return ApiResponse.success(crewService.updateCrew(userId, crewId, request));
+        return ResponseEntity.ok(ApiResponse.success(crewService.updateCrew(userId, crewId, request)));
     }
 
     @PostMapping("/{crewId}/invite-code/reissue")
-    public ApiResponse<InviteCodeResponse> reissueInviteCode(
+    public ResponseEntity<ApiResponse<InviteCodeResponse>> reissueInviteCode(
             @RequestHeader("X-USER-ID") UUID userId,
             @PathVariable UUID crewId
     ) {
-        return ApiResponse.success(crewService.reissueInviteCode(userId, crewId));
+        return ResponseEntity.ok(ApiResponse.success(crewService.reissueInviteCode(userId, crewId)));
     }
 
     @PostMapping("/{crewId}/invite-code")
-    public ApiResponse<InviteCodeResponse> getInviteCode(
+    public ResponseEntity<ApiResponse<InviteCodeResponse>> getInviteCode(
             @RequestHeader("X-USER-ID") UUID userId,
             @PathVariable UUID crewId
     ) {
-        return ApiResponse.success(crewService.getInviteCode(userId, crewId));
+        return ResponseEntity.ok(ApiResponse.success(crewService.getInviteCode(userId, crewId)));
     }
 
     @GetMapping
-    public ApiResponse<MyCrewListResponse> getMyCrews(
+    public ResponseEntity<ApiResponse<MyCrewListResponse>> getMyCrews(
             @RequestHeader("X-USER-ID") UUID userId
     ) {
-        return ApiResponse.success(crewService.getMyCrews(userId));
+        return ResponseEntity.ok(ApiResponse.success(crewService.getMyCrews(userId)));
     }
 
     @GetMapping("/{crewId}/detail")
-    public ApiResponse<CrewDetailResponse> getCrewDetail(
+    public ResponseEntity<ApiResponse<CrewDetailResponse>> getCrewDetail(
             @RequestHeader("X-USER-ID") UUID userId,
             @PathVariable UUID crewId
     ) {
-        return ApiResponse.success(crewService.getCrewDetail(userId, crewId));
+        return ResponseEntity.ok(ApiResponse.success(crewService.getCrewDetail(userId, crewId)));
     }
 
     @DeleteMapping("/{crewId}")
-    public ApiResponse<Void> deleteCrew(
+    public ResponseEntity<ApiResponse<Void>> deleteCrew(
             @RequestHeader("X-USER-ID") UUID userId,
             @PathVariable UUID crewId
     ) {
         crewService.deleteCrew(userId, crewId);
-        return ApiResponse.success(null);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @GetMapping("/{crewId}")
-    public ApiResponse<CrewMainResponse> getCrewMain(
+    public ResponseEntity<ApiResponse<CrewMainResponse>> getCrewMain(
             @RequestHeader("X-USER-ID") UUID userId,
             @PathVariable UUID crewId
     ) {
-        return ApiResponse.success(crewService.getCrewMain(userId, crewId));
+        return ResponseEntity.ok(ApiResponse.success(crewService.getCrewMain(userId, crewId)));
     }
 
 }

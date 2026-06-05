@@ -291,6 +291,7 @@ public class CrewService {
 
         // TODO: Crew softDelete 시 CrewMember도 softDelete 예정
         crew.softDelete();
+        crewRepository.save(crew);
     }
 
     public CrewMainResponse getCrewMain(UUID userId, UUID crewId) {

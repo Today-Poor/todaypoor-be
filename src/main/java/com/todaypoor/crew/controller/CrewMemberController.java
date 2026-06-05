@@ -4,6 +4,8 @@ import java.util.UUID;
 
 import jakarta.validation.Valid;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,49 +32,50 @@ public class CrewMemberController {
     private final CrewMemberService crewMemberService;
 
     @PostMapping("/join")
-    public ApiResponse<JoinCrewResponse> joinCrew(
+    public ResponseEntity<ApiResponse<JoinCrewResponse>> joinCrew(
             @RequestHeader("X-USER-ID") UUID userId,
             @Valid @RequestBody JoinCrewRequest request
     ) {
-        return ApiResponse.success(crewMemberService.joinCrew(userId, request));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(crewMemberService.joinCrew(userId, request)));
     }
 
     @GetMapping("/{crewId}/members")
-    public ApiResponse<CrewMemberListResponse> getCrewMembers(
+    public ResponseEntity<ApiResponse<CrewMemberListResponse>> getCrewMembers(
             @RequestHeader("X-USER-ID") UUID userId,
             @PathVariable("crewId") UUID crewId
     ) {
-        return ApiResponse.success(crewMemberService.getCrewMembers(userId, crewId));
+        return ResponseEntity.ok(ApiResponse.success(crewMemberService.getCrewMembers(userId, crewId)));
     }
 
     @GetMapping("/{crewId}/members/{userId}")
-    public ApiResponse<CrewMemberDetailResponse> getCrewMemberDetail(
+    public ResponseEntity<ApiResponse<CrewMemberDetailResponse>> getCrewMemberDetail(
             @RequestHeader("X-USER-ID") UUID userId,
             @PathVariable("crewId") UUID crewId,
             @PathVariable("userId") UUID crewMemberId
     ) {
-        return ApiResponse.success(crewMemberService.getCrewMemberDetail(userId, crewId, crewMemberId));
+        return ResponseEntity.ok(ApiResponse.success(crewMemberService.getCrewMemberDetail(userId, crewId, crewMemberId)));
     }
 
     @DeleteMapping("/{crewId}/members/me")
-    public ApiResponse<Void> leaveCrew(
+    public ResponseEntity<ApiResponse<Void>> leaveCrew(
             @RequestHeader("X-USER-ID") UUID userId,
             @PathVariable("crewId") UUID crewId
 
     ) {
         crewMemberService.leaveCrew(userId, crewId);
-        return ApiResponse.success(null);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @DeleteMapping("/{crewId}/members/{userId}")
-    public ApiResponse<Void> removeCrewMember(
+    public ResponseEntity<ApiResponse<Void>> removeCrewMember(
         @RequestHeader("X-USER-ID") UUID userId,
         @PathVariable("crewId") UUID crewId,
         @PathVariable("userId") UUID crewMemberId
 
     ) {
         crewMemberService.removeCrewMember(userId, crewId, crewMemberId);
-        return ApiResponse.success(null);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
 }

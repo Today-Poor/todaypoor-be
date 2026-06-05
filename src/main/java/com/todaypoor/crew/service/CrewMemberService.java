@@ -139,6 +139,7 @@ public class CrewMemberService {
         }
 
         crewMember.softDelete();
+        crewMemberRepository.save(crewMember);
     }
 
     @Transactional
@@ -159,6 +160,7 @@ public class CrewMemberService {
         CrewMember crewMember = crewAuthorizationService.validateMember(crewId, crewMemberId);
 
         crewMember.softDelete();
+        crewMemberRepository.save(crewMember);
 
     }
 

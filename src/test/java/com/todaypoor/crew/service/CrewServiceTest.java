@@ -339,6 +339,7 @@ class CrewServiceTest {
         crewService.deleteCrew(userId, crewId);
 
         assertTrue(crew.isDeleted());
+        verify(crewRepository).save(crew);
         verify(crewAuthorizationService).validateOwner(crewId, userId);
     }
 
