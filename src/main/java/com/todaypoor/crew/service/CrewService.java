@@ -106,6 +106,10 @@ public class CrewService {
         if (request.maxMemberCount() == null) {
             throw new IllegalArgumentException("maxMemberCount는 필수입니다.");
         }
+
+        if (request.maxMemberCount() < 1 || request.maxMemberCount() > 5) {
+            throw new BusinessException(ErrorCode.INVALID_MAX_MEMBER_COUNT);
+        }
     }
 
     private String generateUniqueInviteCode() {
