@@ -5,10 +5,16 @@
 - 새 기능 구현 시 중복 논의를 줄인다.
 
 ## 어디부터 읽으면 좋은가
-1. [공통 기반 사용 가이드](./architecture/common-foundation.md)
-2. [BaseEntity 가이드](./architecture/base-entity.md)
-3. [로컬 DB 실행 가이드](./operations/local-db.md)
+1. [공통 기반 사용 가이드](./architecture/foundation/common-foundation.md)
+2. [BaseEntity 가이드](./architecture/foundation/base-entity.md)
+3. [로컬 DB 실행 가이드](./operations/local/local-db.md)
 
 ## 디렉터리
-- `architecture/`: 공통 기반, 패키지 설계, 기술 의사결정
-- `operations/`: 로컬 실행, 운영 절차, 트러블슈팅
+- `architecture/`
+    - `foundation/`: 공통 기반 (예외, 응답 등)
+    - `design/`: 패키지 설계, 계층형 구조 등
+    - `decision/`: 기술 의사결정 기록 (ADR)
+- `operations/`
+    - `local/`: 로컬 개발 환경 실행 가이드
+    - `procedure/`: 운영 절차, 배포 등
+    - `troubleshooting/`: 문제 해결 가이드
