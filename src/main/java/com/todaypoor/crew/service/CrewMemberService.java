@@ -68,10 +68,7 @@ public class CrewMemberService {
         validateCrewMemberId(crewMemberId);
 
         crewAuthorizationService.validateMember(crewId, userId);
-        crewAuthorizationService.validateMember(crewId, crewMemberId);
-
-        CrewMember crewMember = crewMemberRepository.findByCrewIdAndUserIdAndDeletedAtIsNull(crewId, crewMemberId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.CREW_MEMBER_NOT_FOUND));
+        CrewMember crewMember = crewAuthorizationService.validateMember(crewId, crewMemberId);
 
         return CrewMemberDetailResponse.from(crewMember);
     }
