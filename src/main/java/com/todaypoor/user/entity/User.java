@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 import com.todaypoor.global.entity.BaseEntity;
 
 @Entity
-@Table(name = "user")
+@Table(name = "users")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 @SQLRestriction("deleted_at IS NULL")
