@@ -9,6 +9,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
+import org.hibernate.annotations.SQLRestriction;
+
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -19,6 +21,7 @@ import com.todaypoor.global.entity.BaseEntity;
 @Table(name = "user")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
+@SQLRestriction("deleted_at IS NULL")
 public class User extends BaseEntity {
 
     @Id
