@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import com.todaypoor.crew.dto.crew.request.CreateCrewRequest;
-import com.todaypoor.crew.dto.crew.request.JoinCrewRequest;
 import com.todaypoor.crew.dto.crew.request.UpdateCrewRequest;
 import com.todaypoor.crew.dto.crew.response.CreateCrewResponse;
 import com.todaypoor.crew.dto.crew.response.CrewDetailResponse;
@@ -19,13 +18,11 @@ import com.todaypoor.crew.dto.crew.response.CrewMainResponse;
 import com.todaypoor.crew.dto.crew.response.CrewMainResponse.LatestExpense;
 import com.todaypoor.crew.dto.crew.response.CrewMainResponse.MemberSummary;
 import com.todaypoor.crew.dto.crew.response.InviteCodeResponse;
-import com.todaypoor.crew.dto.crew.response.JoinCrewResponse;
 import com.todaypoor.crew.dto.crew.response.MyCrewListResponse;
 import com.todaypoor.crew.dto.crew.response.MyCrewListResponse.MyCrewSummary;
 import com.todaypoor.crew.dto.crew.response.UpdateCrewResponse;
 import com.todaypoor.crew.entity.Crew;
 import com.todaypoor.crew.entity.CrewMember;
-import com.todaypoor.crew.entity.CrewRole;
 import com.todaypoor.crew.repository.CrewMemberRepository;
 import com.todaypoor.crew.repository.CrewRepository;
 import com.todaypoor.expense.entity.Expense;
@@ -106,6 +103,10 @@ public class CrewService {
         if (request.maxMemberCount() == null) {
             throw new IllegalArgumentException("maxMemberCount는 필수입니다.");
         }
+
+        if (request.maxMemberCount() < 1 || request.maxMemberCount() > 5) {
+            throw new BusinessException(ErrorCode.INVALID_MAX_MEMBER_COUNT);
+        }
     }
 
     private String generateUniqueInviteCode() {
@@ -123,49 +124,6 @@ public class CrewService {
                 .replace("-", "")
                 .substring(0, INVITE_CODE_LENGTH)
                 .toUpperCase();
-    }
-
-    @Transactional
-    public JoinCrewResponse joinCrew(UUID userId, JoinCrewRequest request) {
-
-        validateUserId(userId);
-        validateJoinCrewRequest(request);
-
-        String inviteCode = normalizeInviteCode(request.inviteCode());
-
-        Crew crew = crewRepository.findByInviteCodeAndDeletedAtIsNull(inviteCode)
-                .orElseThrow(() -> new BusinessException(ErrorCode.CREW_NOT_FOUND));
-
-        if (crew.getInviteCodeExpiresAt() == null || !crew.getInviteCodeExpiresAt().isAfter(LocalDateTime.now())) {
-            throw new BusinessException(ErrorCode.INVALID_REQUEST); // 만료된 초대코드
-        }
-
-        if (crewMemberRepository.existsByCrewIdAndUserIdAndDeletedAtIsNull(crew.getId(), userId)) {
-            throw new BusinessException(ErrorCode.INVALID_REQUEST); // 이미 가입된 메머버
-        }
-
-        CrewMember crewMember = crewMemberRepository.findDeletedMember(crew.getId(), userId)
-                .map(deletedMember -> { // soft delete 된 멤버 값이 있을 때만 수행
-                    deletedMember.restoreMember(CrewRole.MEMBER);
-                    return crewMemberRepository.save(deletedMember);
-                })
-                .orElseGet(() -> crewMemberRepository.save(CrewMember.createMember(crew.getId(), userId)));
-
-        Integer currentMemberCount = crewMemberRepository.countByCrewIdAndDeletedAtIsNull(crew.getId());
-
-        return JoinCrewResponse.of(crew, crewMember, currentMemberCount);
-    }
-
-    private void validateJoinCrewRequest(JoinCrewRequest request) {
-        if (request == null) throw new IllegalArgumentException("request는 필수입니다.");
-
-        if (request.inviteCode() == null || request.inviteCode().isBlank()) {
-            throw new IllegalArgumentException("inviteCode는 필수입니다.");
-        }
-    }
-
-    private String normalizeInviteCode(String inviteCode) {
-        return inviteCode.trim().toUpperCase();
     }
 
     @Transactional
@@ -333,6 +291,7 @@ public class CrewService {
 
         // TODO: Crew softDelete 시 CrewMember도 softDelete 예정
         crew.softDelete();
+        crewRepository.save(crew);
     }
 
     public CrewMainResponse getCrewMain(UUID userId, UUID crewId) {

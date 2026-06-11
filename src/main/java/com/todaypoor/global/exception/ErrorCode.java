@@ -32,6 +32,11 @@ public enum ErrorCode {
             "CREW_MEMBER_LIMIT_EXCEEDED",
             "크루 최대 인원을 초과했습니다."
     ),
+    OWNER_CANNOT_LEAVE(
+            HttpStatus.BAD_REQUEST,
+            "OWNER_CANNOT_LEAVE",
+            "방장은 크루를 탈퇴할 수 없습니다. 방장 권한을 위임하거나 크루를 삭제하세요."
+    ),
     OCR_FAILED(
             HttpStatus.INTERNAL_SERVER_ERROR,
             "OCR_FAILED",

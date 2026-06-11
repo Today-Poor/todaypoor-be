@@ -14,13 +14,11 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.todaypoor.crew.dto.crew.request.CreateCrewRequest;
-import com.todaypoor.crew.dto.crew.request.JoinCrewRequest;
 import com.todaypoor.crew.dto.crew.request.UpdateCrewRequest;
 import com.todaypoor.crew.dto.crew.response.CreateCrewResponse;
 import com.todaypoor.crew.dto.crew.response.CrewDetailResponse;
 import com.todaypoor.crew.dto.crew.response.CrewMainResponse;
 import com.todaypoor.crew.dto.crew.response.InviteCodeResponse;
-import com.todaypoor.crew.dto.crew.response.JoinCrewResponse;
 import com.todaypoor.crew.dto.crew.response.MyCrewListResponse;
 import com.todaypoor.crew.dto.crew.response.UpdateCrewResponse;
 import com.todaypoor.crew.entity.AiMode;
@@ -94,48 +92,11 @@ class CrewControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(requestBody)
                 )
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.code").value("OK"))
                 .andExpect(jsonPath("$.data.crewId").value(crewId.toString()))
                 .andExpect(jsonPath("$.data.name").value("거지방 1조"));
-    }
-
-    @Test
-    void joinCrew_success() throws Exception {
-        UUID userId = UUID.randomUUID();
-        UUID crewId = UUID.randomUUID();
-        LocalDateTime now = LocalDateTime.now();
-
-        JoinCrewResponse response = new JoinCrewResponse(
-                crewId,
-                "거지방 1조",
-                CrewRole.MEMBER,
-                4,
-                5,
-                now
-        );
-
-        given(crewService.joinCrew(eq(userId), any(JoinCrewRequest.class))).willReturn(response);
-
-        String requestBody = """
-                {
-                  "inviteCode": "ABCD1234"
-                }
-                """;
-
-        mockMvc.perform(
-                        post("/api/crews/join")
-                                .header("X-USER-ID", userId.toString())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody)
-                )
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.code").value("OK"))
-                .andExpect(jsonPath("$.data.crewId").value(crewId.toString()))
-                .andExpect(jsonPath("$.data.crewName").value("거지방 1조"))
-                .andExpect(jsonPath("$.data.role").value("MEMBER"));
     }
 
     @Test

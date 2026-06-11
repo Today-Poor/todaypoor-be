@@ -26,13 +26,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.openapitools.jackson.nullable.JsonNullable;
 
 import com.todaypoor.crew.dto.crew.request.CreateCrewRequest;
-import com.todaypoor.crew.dto.crew.request.JoinCrewRequest;
 import com.todaypoor.crew.dto.crew.request.UpdateCrewRequest;
 import com.todaypoor.crew.dto.crew.response.CreateCrewResponse;
 import com.todaypoor.crew.dto.crew.response.CrewDetailResponse;
 import com.todaypoor.crew.dto.crew.response.CrewMainResponse;
 import com.todaypoor.crew.dto.crew.response.InviteCodeResponse;
-import com.todaypoor.crew.dto.crew.response.JoinCrewResponse;
 import com.todaypoor.crew.dto.crew.response.MyCrewListResponse;
 import com.todaypoor.crew.dto.crew.response.UpdateCrewResponse;
 import com.todaypoor.crew.entity.AiMode;
@@ -125,97 +123,6 @@ class CrewServiceTest {
         );
 
         assertEquals("request는 필수입니다.", exception.getMessage());
-    }
-
-    @Test
-    void joinCrew_success_newMemberCreated() {
-        UUID crewId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-        Crew crew = crewWithId(crewId, "ABCD1234", LocalDateTime.now().plusDays(1));
-
-        given(crewRepository.findByInviteCodeAndDeletedAtIsNull("ABCD1234")).willReturn(Optional.of(crew));
-        given(crewMemberRepository.existsByCrewIdAndUserIdAndDeletedAtIsNull(crewId, userId)).willReturn(false);
-        given(crewMemberRepository.findDeletedMember(crewId, userId)).willReturn(Optional.empty());
-        given(crewMemberRepository.save(any(CrewMember.class))).willAnswer(invocation -> invocation.getArgument(0));
-        given(crewMemberRepository.countByCrewIdAndDeletedAtIsNull(crewId)).willReturn(2);
-
-        JoinCrewResponse response = crewService.joinCrew(userId, new JoinCrewRequest(" abcd1234 "));
-
-        assertEquals(crewId, response.crewId());
-        assertEquals("테스트 크루", response.crewName());
-        assertEquals(CrewRole.MEMBER, response.role());
-        assertEquals(2, response.currentMemberCount());
-        assertEquals(5, response.maxMemberCount());
-        assertNotNull(response.joinedAt());
-    }
-
-    @Test
-    void joinCrew_success_restoreDeletedMember() {
-        UUID crewId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-        Crew crew = crewWithId(crewId, "RESTORE1", LocalDateTime.now().plusDays(1));
-        CrewMember deletedMember = CrewMember.createMember(crewId, userId);
-        deletedMember.softDelete();
-
-        given(crewRepository.findByInviteCodeAndDeletedAtIsNull("RESTORE1")).willReturn(Optional.of(crew));
-        given(crewMemberRepository.existsByCrewIdAndUserIdAndDeletedAtIsNull(crewId, userId)).willReturn(false);
-        given(crewMemberRepository.findDeletedMember(crewId, userId)).willReturn(Optional.of(deletedMember));
-        given(crewMemberRepository.save(any(CrewMember.class))).willAnswer(invocation -> invocation.getArgument(0));
-        given(crewMemberRepository.countByCrewIdAndDeletedAtIsNull(crewId)).willReturn(2);
-
-        JoinCrewResponse response = crewService.joinCrew(userId, new JoinCrewRequest("restore1"));
-
-        assertEquals(CrewRole.MEMBER, response.role());
-        assertFalse(deletedMember.isDeleted());
-    }
-
-    @Test
-    void joinCrew_crewNotFound_throwsBusinessException() {
-        UUID userId = UUID.randomUUID();
-
-        given(crewRepository.findByInviteCodeAndDeletedAtIsNull("NOTFOUND")).willReturn(Optional.empty());
-
-        BusinessException exception = assertThrows(
-                BusinessException.class,
-                () -> crewService.joinCrew(userId, new JoinCrewRequest("notfound"))
-        );
-
-        assertEquals(ErrorCode.CREW_NOT_FOUND, exception.getErrorCode());
-    }
-
-    @Test
-    void joinCrew_expiredInviteCode_throwsBusinessException() {
-        UUID crewId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-        Crew crew = crewWithId(crewId, "EXPIRED1", LocalDateTime.now().plusDays(1));
-        setField(crew, "inviteCodeExpiresAt", LocalDateTime.now().minusMinutes(1));
-
-        given(crewRepository.findByInviteCodeAndDeletedAtIsNull("EXPIRED1")).willReturn(Optional.of(crew));
-
-        BusinessException exception = assertThrows(
-                BusinessException.class,
-                () -> crewService.joinCrew(userId, new JoinCrewRequest("expired1"))
-        );
-
-        assertEquals(ErrorCode.INVALID_REQUEST, exception.getErrorCode());
-        verifyNoInteractions(crewMemberRepository);
-    }
-
-    @Test
-    void joinCrew_alreadyMember_throwsBusinessException() {
-        UUID crewId = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
-        Crew crew = crewWithId(crewId, "DUPL1234", LocalDateTime.now().plusDays(1));
-
-        given(crewRepository.findByInviteCodeAndDeletedAtIsNull("DUPL1234")).willReturn(Optional.of(crew));
-        given(crewMemberRepository.existsByCrewIdAndUserIdAndDeletedAtIsNull(crewId, userId)).willReturn(true);
-
-        BusinessException exception = assertThrows(
-                BusinessException.class,
-                () -> crewService.joinCrew(userId, new JoinCrewRequest("dupl1234"))
-        );
-
-        assertEquals(ErrorCode.INVALID_REQUEST, exception.getErrorCode());
     }
 
     @Test
@@ -432,6 +339,7 @@ class CrewServiceTest {
         crewService.deleteCrew(userId, crewId);
 
         assertTrue(crew.isDeleted());
+        verify(crewRepository).save(crew);
         verify(crewAuthorizationService).validateOwner(crewId, userId);
     }
 
