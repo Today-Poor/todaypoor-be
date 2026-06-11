@@ -30,34 +30,34 @@ public class User extends BaseEntity {
     private UUID id;
 
     @Column(nullable = false)
-    private String username;
+    private String nickname;
 
     @Column(name = "profile_image_url")
     private String profileImageUrl;
 
-    public static User create(String username, String profileImageUrl) {
+    public static User create(String nickname, String profileImageUrl) {
 
-        validateUsername(username);
+        validateNickname(nickname);
 
         User user = new User();
-        user.username = username;
+        user.nickname = nickname;
         user.profileImageUrl = profileImageUrl;
 
         return user;
     }
 
-    private static void validateUsername(String username) {
+    private static void validateNickname(String nickname) {
 
-        if (username == null || username.isBlank()) {
+        if (nickname == null || nickname.isBlank()) {
             throw new IllegalArgumentException("username은 필수입니다.");
         }
     }
 
-    public void update(String username, String profileImageUrl) {
+    public void update(String nickname, String profileImageUrl) {
 
-        if (username != null) {
-            validateUsername(username);
-            this.username = username;
+        if (nickname != null) {
+            validateNickname(nickname);
+            this.nickname = nickname;
         }
 
         this.profileImageUrl = profileImageUrl;
