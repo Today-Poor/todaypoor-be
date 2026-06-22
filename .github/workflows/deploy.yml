@@ -1,0 +1,62 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build with Gradle
+        run: ./gradlew bootJar
+
+      - name: Copy JAR file via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.AWS_HOST }}
+          username: ${{ secrets.AWS_USER }}
+          key: ${{ secrets.AWS_SSH_KEY }}
+          port: 22
+          source: "build/libs/todaypoor-be-0.0.1-SNAPSHOT.jar"
+          target: "/home/${{ secrets.AWS_USER }}/deploy"
+          strip_components: 2
+
+      - name: Execute remote commands via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AWS_HOST }}
+          username: ${{ secrets.AWS_USER }}
+          key: ${{ secrets.AWS_SSH_KEY }}
+          port: 22
+          script: |
+            # deploy 디렉토리 존재 확인 및 생성
+            mkdir -p /home/${{ secrets.AWS_USER }}/deploy
+            
+            # 기존 Java 프로세스 종료 (실행 중인 프로세스가 없어도 에러가 나지 않도록 || true 추가)
+            killall -9 java || true
+            
+            # 1초 대기 후 백그라운드에서 신규 실행
+            sleep 1
+            nohup java -jar \
+              -DKAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }} \
+              -DKAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }} \
+              -DJWT_SECRET=${{ secrets.JWT_SECRET_KEY }} \
+              -Dspring.datasource.url=${{ secrets.DB_URL }} \
+              -Dspring.datasource.username=${{ secrets.DB_USERNAME }} \
+              -Dspring.datasource.password=${{ secrets.DB_PASSWORD }} \
+              /home/${{ secrets.AWS_USER }}/deploy/todaypoor-be-0.0.1-SNAPSHOT.jar > /home/${{ secrets.AWS_USER }}/deploy/app.log 2>&1 &
