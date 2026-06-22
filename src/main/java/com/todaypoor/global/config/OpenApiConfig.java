@@ -32,7 +32,7 @@ public class OpenApiConfig {
 
         return new OpenAPI()
                 .info(info)
-                .addSecurityRequirementsItem(securityRequirement)
+                .addSecurityItem(securityRequirement)
                 .components(components);
     }
 }
