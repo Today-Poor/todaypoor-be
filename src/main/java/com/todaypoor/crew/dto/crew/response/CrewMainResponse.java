@@ -10,6 +10,7 @@ import com.todaypoor.crew.entity.CrewRole;
 import com.todaypoor.expense.entity.Expense;
 import com.todaypoor.expense.entity.ExpenseCategory;
 import com.todaypoor.expense.entity.ExpenseVisibility;
+import java.util.Objects;
 
 public record CrewMainResponse(
 
@@ -65,17 +66,19 @@ public record CrewMainResponse(
             ExpenseVisibility visibility,
             LocalDateTime spentAt
     ) {
-        public static LatestExpense from(Expense expense) {
+        public static LatestExpense from(Expense expense, UUID requestUserId) {
             if (expense == null) {
                 return null;
             }
 
-            return new LatestExpense(
+            boolean isOwner = Objects.equals(expense.getUserId(), requestUserId);
+            ExpenseVisibility visibility = expense.getVisibility();
 
+            return new LatestExpense(
                     expense.getId(),
-                    expense.getCategory(),
-                    expense.getAmount(),
-                    expense.getVisibility(),
+                    isOwner ? expense.getCategory() : visibility.maskCategory(expense.getCategory()),
+                    isOwner ? expense.getAmount()   : visibility.maskAmount(expense.getAmount()),
+                    visibility,
                     expense.getSpentAt()
             );
         }

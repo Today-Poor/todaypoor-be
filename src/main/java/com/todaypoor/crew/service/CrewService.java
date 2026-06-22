@@ -314,7 +314,7 @@ public class CrewService {
 
                     return MemberSummary.of(
                             crewMember,
-                            LatestExpense.from(latestExpense)
+                            LatestExpense.from(latestExpense, userId)
                     );
                 })
                 .toList();

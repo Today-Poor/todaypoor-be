@@ -11,6 +11,7 @@ import com.todaypoor.expense.entity.ExpenseVisibility;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.Objects;
 
 @Getter
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -29,19 +30,20 @@ public class ExpenseDetailResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public static ExpenseDetailResponse of(Expense expense, UserInfo user, OcrResultInfo ocrResult) {
-        // TODO: visibility(공개 범위) 및 조회자 권한에 따른 데이터 마스킹(*** 처리) 로직 추가 필요
+    public static ExpenseDetailResponse of(Expense expense, UUID requestUserId, UserInfo user, OcrResultInfo ocrResult) {
+        boolean isOwner = Objects.equals(expense.getUserId(), requestUserId);
+        ExpenseVisibility visibility = expense.getVisibility();
 
         return new ExpenseDetailResponse(
                 expense.getId(),
                 expense.getCrewId(),
                 user,
                 ocrResult,
-                expense.getCategory(),
-                expense.getAmount(),
-                expense.getMerchant(),
-                expense.getMemo(),
-                expense.getVisibility(),
+                isOwner ? expense.getCategory() : visibility.maskCategory(expense.getCategory()),
+                isOwner ? expense.getAmount()   : visibility.maskAmount(expense.getAmount()),
+                isOwner ? expense.getMerchant() : visibility.maskMerchant(expense.getMerchant()),
+                isOwner ? expense.getMemo()     : visibility.maskMemo(expense.getMemo()),
+                visibility,
                 expense.getSpentAt(),
                 expense.getCreatedAt(),
                 expense.getUpdatedAt()
