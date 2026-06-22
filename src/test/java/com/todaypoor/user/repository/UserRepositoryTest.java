@@ -23,7 +23,7 @@ class UserRepositoryTest {
     @DisplayName("Soft Delete된 사용자는 findByIdAndDeletedAtIsNull로 조회되지 않아야 한다")
     void soft_delete_filtering_by_method() {
         // given
-        User user = User.create("user1", "url");
+        User user = User.create("user1");
         userRepository.save(user);
         
         user.softDelete(); // BaseEntity의 deleted_at 필드를 채움
@@ -40,8 +40,8 @@ class UserRepositoryTest {
     @DisplayName("@SQLRestriction에 의해 삭제된 사용자는 findAll에서 조회되지 않아야 한다")
     void sql_restriction_filtering() {
         // given
-        User user1 = User.create("user1", "url");
-        User user2 = User.create("user2", "url");
+        User user1 = User.create("user1");
+        User user2 = User.create("user2");
         userRepository.save(user1);
         userRepository.save(user2);
 

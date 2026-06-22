@@ -32,16 +32,12 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private String nickname;
 
-    @Column(name = "profile_image_url")
-    private String profileImageUrl;
-
-    public static User create(String nickname, String profileImageUrl) {
+    public static User create(String nickname) {
 
         validateNickname(nickname);
 
         User user = new User();
         user.nickname = nickname;
-        user.profileImageUrl = profileImageUrl;
 
         return user;
     }
@@ -53,14 +49,12 @@ public class User extends BaseEntity {
         }
     }
 
-    public void update(String nickname, String profileImageUrl) {
+    public void update(String nickname) {
 
         if (nickname != null) {
             validateNickname(nickname);
             this.nickname = nickname;
         }
-
-        this.profileImageUrl = profileImageUrl;
     }
 
 }
