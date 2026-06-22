@@ -1,9 +1,12 @@
 package com.todaypoor.global.config;
 
+import com.todaypoor.auth.service.CustomOAuth2UserService;
 import com.todaypoor.global.security.CustomAccessDeniedHandler;
 import com.todaypoor.global.security.CustomAuthenticationEntryPoint;
 import com.todaypoor.global.security.CustomUserDetailsService;
 import com.todaypoor.global.security.JwtAuthenticationFilter;
+import com.todaypoor.global.security.OAuth2AuthenticationFailureHandler;
+import com.todaypoor.global.security.OAuth2AuthenticationSuccessHandler;
 import com.todaypoor.global.security.TokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -24,6 +27,9 @@ public class SecurityConfig {
     private final CustomUserDetailsService userDetailsService;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+    private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -36,12 +42,11 @@ public class SecurityConfig {
                         .requestMatchers("/oauth2/**", "/login/**", "/api/auth/reissue", "/error").permitAll()
                         .anyRequest().authenticated()
                 )
-                .oauth2Login(oauth2 -> {
-                        // TODO: 서브 이슈 4에서 아래의 실제 핸들러 및 서비스 구현체 연동 예정
-                        // oauth2.userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
-                        //       .successHandler(oAuth2AuthenticationSuccessHandler)
-                        //       .failureHandler(oAuth2AuthenticationFailureHandler);
-                })
+                .oauth2Login(oauth2 -> oauth2
+                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                        .successHandler(oAuth2AuthenticationSuccessHandler)
+                        .failureHandler(oAuth2AuthenticationFailureHandler)
+                )
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(customAuthenticationEntryPoint)
                         .accessDeniedHandler(customAccessDeniedHandler)
@@ -54,3 +59,4 @@ public class SecurityConfig {
         return http.build();
     }
 }
+
