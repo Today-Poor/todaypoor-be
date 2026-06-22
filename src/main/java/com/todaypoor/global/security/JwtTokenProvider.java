@@ -23,9 +23,9 @@ public class JwtTokenProvider implements TokenProvider {
     private SecretKey key;
 
     public JwtTokenProvider(
-            @Value("${jwt.secret-key}") String secretKey,
-            @Value("${jwt.access-expiration-time}") long accessTokenExpirationTime,
-            @Value("${jwt.refresh-expiration-time}") long refreshTokenExpirationTime) {
+            @Value("${jwt.secret.key}") String secretKey,
+            @Value("${jwt.access-token-expiration}") long accessTokenExpirationTime,
+            @Value("${jwt.refresh-token-expiration}") long refreshTokenExpirationTime) {
         this.secretKeyPlain = secretKey;
         this.accessTokenExpirationTime = accessTokenExpirationTime;
         this.refreshTokenExpirationTime = refreshTokenExpirationTime;
