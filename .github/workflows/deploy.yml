@@ -33,7 +33,7 @@ jobs:
           key: ${{ secrets.AWS_SSH_KEY }}
           port: 22
           source: "build/libs/todaypoor-be-0.0.1-SNAPSHOT.jar"
-          target: "/home/${{ secrets.AWS_USER }}/deploy"
+          target: "/home/${{ secrets.AWS_USER }}"
           strip_components: 2
 
       - name: Execute remote commands via SSH
@@ -44,9 +44,6 @@ jobs:
           key: ${{ secrets.AWS_SSH_KEY }}
           port: 22
           script: |
-            # deploy 디렉토리 존재 확인 및 생성
-            mkdir -p /home/${{ secrets.AWS_USER }}/deploy
-            
             # 기존 Java 프로세스 종료 (실행 중인 프로세스가 없어도 에러가 나지 않도록 || true 추가)
             killall -9 java || true
             
@@ -55,8 +52,8 @@ jobs:
             nohup java -jar \
               -DKAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }} \
               -DKAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }} \
-              -DJWT_SECRET=${{ secrets.JWT_SECRET_KEY }} \
+              -DJWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }} \
               -Dspring.datasource.url=${{ secrets.DB_URL }} \
               -Dspring.datasource.username=${{ secrets.DB_USERNAME }} \
               -Dspring.datasource.password=${{ secrets.DB_PASSWORD }} \
-              /home/${{ secrets.AWS_USER }}/deploy/todaypoor-be-0.0.1-SNAPSHOT.jar > /home/${{ secrets.AWS_USER }}/deploy/app.log 2>&1 &
+              todaypoor-be-0.0.1-SNAPSHOT.jar > nohup.out 2>&1 &
