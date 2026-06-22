@@ -36,12 +36,12 @@ public class SecurityConfig {
                         .requestMatchers("/oauth2/**", "/login/**", "/api/auth/reissue", "/error").permitAll()
                         .anyRequest().authenticated()
                 )
-                .oauth2Login(oauth2 -> oauth2
+                .oauth2Login(oauth2 -> {
                         // TODO: 서브 이슈 4에서 아래의 실제 핸들러 및 서비스 구현체 연동 예정
-                        // .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
-                        // .successHandler(oAuth2AuthenticationSuccessHandler)
-                        // .failureHandler(oAuth2AuthenticationFailureHandler)
-                )
+                        // oauth2.userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                        //       .successHandler(oAuth2AuthenticationSuccessHandler)
+                        //       .failureHandler(oAuth2AuthenticationFailureHandler);
+                })
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(customAuthenticationEntryPoint)
                         .accessDeniedHandler(customAccessDeniedHandler)

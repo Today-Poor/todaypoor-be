@@ -19,6 +19,15 @@ class SecurityExceptionHandlerTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private TokenProvider tokenProvider;
+
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
+
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private org.springframework.security.oauth2.client.registration.ClientRegistrationRepository clientRegistrationRepository;
+
     @Test
     void unauthenticatedRequest_returns401WithApiResponseFormat() throws Exception {
         mockMvc.perform(get("/security-test/authenticated"))
