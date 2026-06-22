@@ -19,7 +19,9 @@ import java.util.UUID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -77,12 +79,49 @@ class UserControllerTest {
         given(userService.getMyInfo(any(UUID.class))).willReturn(expectedResponse);
 
         // when & then
-        mockMvc.perform(get("/api/user/me")
+        mockMvc.perform(get("/api/users/me")
                         .with(authentication(authenticationToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.code").value("OK"))
                 .andExpect(jsonPath("$.data.userId").value(targetUserId.toString()))
                 .andExpect(jsonPath("$.data.nickname").value(nickname));
+    }
+
+    @Test
+    @DisplayName("로그인된 사용자가 내 정보 수정을 요청 시 200 OK와 수정 완료된 핵심 프로필 정보를 반환한다")
+    void updateMyInfo_Success() throws Exception {
+        // given
+        UUID targetUserId = UUID.randomUUID();
+        String newNickname = "newTester";
+        
+        User mockUser = org.mockito.Mockito.mock(User.class);
+        given(mockUser.getId()).willReturn(targetUserId);
+        given(mockUser.getNickname()).willReturn(newNickname);
+
+        CustomUserDetails userDetails = new CustomUserDetails(mockUser);
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                userDetails, null, userDetails.getAuthorities()
+        );
+
+        com.todaypoor.user.dto.UserUpdateRequest request = new com.todaypoor.user.dto.UserUpdateRequest(newNickname);
+        UserMeResponse expectedResponse = UserMeResponse.builder()
+                .userId(targetUserId)
+                .nickname(newNickname)
+                .build();
+
+        given(userService.updateMyInfo(any(UUID.class), any(com.todaypoor.user.dto.UserUpdateRequest.class))).willReturn(expectedResponse);
+
+        // when & then
+        mockMvc.perform(patch("/api/users/me")
+                        .with(csrf())
+                        .with(authentication(authenticationToken))
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.code").value("OK"))
+                .andExpect(jsonPath("$.data.userId").value(targetUserId.toString()))
+                .andExpect(jsonPath("$.data.nickname").value(newNickname));
     }
 }
