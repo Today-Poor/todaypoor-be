@@ -19,8 +19,7 @@ public record CreateCrewResponse(
         LocalDateTime createdAt
 ) {
 
-    // TODO: Owner.of 추가 예정
-    public record Owner(UUID userId, String nickname, String profileImageUrl) {}
+    public record Owner(UUID userId, String nickname) {}
 
     public static CreateCrewResponse of(Crew crew, Owner owner, Integer currentMemberCount) {
         return new CreateCrewResponse(

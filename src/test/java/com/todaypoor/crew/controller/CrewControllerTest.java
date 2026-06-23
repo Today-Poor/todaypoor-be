@@ -78,8 +78,7 @@ class CrewControllerTest {
         LocalDateTime now = LocalDateTime.now();
         CreateCrewResponse.Owner owner = new CreateCrewResponse.Owner(
                 userId,
-                "철수",
-                "https://image-url.com/profile.png"
+                "철수"
         );
 
         CreateCrewResponse response = new CreateCrewResponse(
@@ -232,7 +231,7 @@ class CrewControllerTest {
         UUID userId = UUID.randomUUID();
         UUID crewId = UUID.randomUUID();
         LocalDateTime now = LocalDateTime.now();
-        CrewDetailResponse.Owner owner = new CrewDetailResponse.Owner(userId, null, null);
+        CrewDetailResponse.Owner owner = new CrewDetailResponse.Owner(userId, null);
         CrewDetailResponse response = new CrewDetailResponse(
                 crewId,
                 "거지방 1조",
@@ -290,7 +289,6 @@ class CrewControllerTest {
         );
         CrewMainResponse.MemberSummary member = new CrewMainResponse.MemberSummary(
                 userId,
-                null,
                 null,
                 CrewRole.OWNER,
                 latestExpense

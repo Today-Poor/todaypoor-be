@@ -11,7 +11,6 @@ public record CrewMemberDetailResponse(
         UUID crewId,
         UUID userId,
         String nickname,
-        String profileImageUrl,
         CrewRole role,
         LocalDateTime joinedAt
 ) {
@@ -21,7 +20,6 @@ public record CrewMemberDetailResponse(
                 crewMember.getCrewId(),
                 crewMember.getUserId(),
                 nickname,
-                null,
                 crewMember.getRole(),
                 crewMember.getJoinedAt()
         );
