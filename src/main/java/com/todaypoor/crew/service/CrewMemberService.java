@@ -50,11 +50,11 @@ public class CrewMemberService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.CREW_NOT_FOUND));
 
         if (crew.getInviteCodeExpiresAt() == null || !crew.getInviteCodeExpiresAt().isAfter(LocalDateTime.now())) {
-            throw new BusinessException(ErrorCode.INVALID_REQUEST); // 만료된 초대코드
+            throw new BusinessException(ErrorCode.EXPIRED_INVITE_CODE);
         }
 
         if (crewMemberRepository.existsByCrewIdAndUserIdAndDeletedAtIsNull(crew.getId(), userId)) {
-            throw new BusinessException(ErrorCode.INVALID_REQUEST); // 이미 가입된 메머버
+            throw new BusinessException(ErrorCode.ALREADY_JOINED_CREW);
         }
 
         Integer currentMemberCount = crewMemberRepository.countByCrewIdAndDeletedAtIsNull(crew.getId());

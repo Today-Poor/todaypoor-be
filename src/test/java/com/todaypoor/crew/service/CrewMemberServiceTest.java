@@ -124,7 +124,7 @@ class CrewMemberServiceTest {
                 () -> crewMemberService.joinCrew(userId, new JoinCrewRequest("expired1"))
         );
 
-        assertEquals(ErrorCode.INVALID_REQUEST, exception.getErrorCode());
+        assertEquals(ErrorCode.EXPIRED_INVITE_CODE, exception.getErrorCode());
         verifyNoInteractions(crewMemberRepository);
     }
 
@@ -142,7 +142,7 @@ class CrewMemberServiceTest {
                 () -> crewMemberService.joinCrew(userId, new JoinCrewRequest("dupl1234"))
         );
 
-        assertEquals(ErrorCode.INVALID_REQUEST, exception.getErrorCode());
+        assertEquals(ErrorCode.ALREADY_JOINED_CREW, exception.getErrorCode());
     }
 
     @Test
