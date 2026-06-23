@@ -79,7 +79,7 @@ public class CrewService {
 
         String ownerNickname = userRepository.findByIdAndDeletedAtIsNull(userId)
                 .map(User::getNickname).orElse(null);
-        CreateCrewResponse.Owner owner = new CreateCrewResponse.Owner(userId, ownerNickname, null);
+        CreateCrewResponse.Owner owner = new CreateCrewResponse.Owner(userId, ownerNickname);
 
         return CreateCrewResponse.of(savedCrew, owner, currentMemberCount);
     }
@@ -271,7 +271,7 @@ public class CrewService {
 
         String ownerNickname = userRepository.findByIdAndDeletedAtIsNull(crew.getOwnerId())
                 .map(User::getNickname).orElse(null);
-        CrewDetailResponse.Owner owner = new CrewDetailResponse.Owner(crew.getOwnerId(), ownerNickname, null);
+        CrewDetailResponse.Owner owner = new CrewDetailResponse.Owner(crew.getOwnerId(), ownerNickname);
 
         Integer currentMemberCount = crewMemberRepository.countByCrewIdAndDeletedAtIsNull(crewId);
 

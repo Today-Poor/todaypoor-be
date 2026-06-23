@@ -41,7 +41,6 @@ public record CrewMainResponse(
 
             UUID userId,
             String nickname,
-            String profileImageUrl,
             CrewRole role,
             LatestExpense latestExpense
     ) {
@@ -49,7 +48,6 @@ public record CrewMainResponse(
             return new MemberSummary(
                     crewMember.getUserId(),
                     nickname,
-                    null,
                     crewMember.getRole(),
                     latestExpense
             );

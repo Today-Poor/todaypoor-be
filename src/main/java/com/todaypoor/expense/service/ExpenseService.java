@@ -142,7 +142,7 @@ public class ExpenseService {
                 .map(user -> user.getNickname()).orElse(null);
 
         return MemberExpenseListResponse.of(
-                crewId, crewName, targetUserId, nickname, null,
+                crewId, crewName, targetUserId, nickname,
                 date, totalAmount, expensePage.getContent(), requestUserId
         );
     }
@@ -158,7 +158,7 @@ public class ExpenseService {
         String nickname = userRepository.findByIdAndDeletedAtIsNull(expense.getUserId())
                 .map(user -> user.getNickname()).orElse(null);
         ExpenseDetailResponse.UserInfo userInfo = ExpenseDetailResponse.UserInfo.of(
-                expense.getUserId(), nickname, null
+                expense.getUserId(), nickname
         );
 
         ExpenseDetailResponse.OcrResultInfo ocrInfo = null;
