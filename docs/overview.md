@@ -16,5 +16,6 @@
     - `decision/`: 기술 의사결정 기록 (ADR)
 - `operations/`
     - `local/`: 로컬 개발 환경 실행 가이드
-    - `procedure/`: 운영 절차, 배포 등
+    - `procedure/`
+        - [deploy.md](./operations/procedure/deploy.md): CI/CD 배포 가이드
     - `troubleshooting/`: 문제 해결 가이드

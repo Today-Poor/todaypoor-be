@@ -37,6 +37,16 @@ public enum ErrorCode {
             "OWNER_CANNOT_LEAVE",
             "방장은 크루를 탈퇴할 수 없습니다. 방장 권한을 위임하거나 크루를 삭제하세요."
     ),
+    EXPIRED_INVITE_CODE(
+            HttpStatus.BAD_REQUEST,
+            "EXPIRED_INVITE_CODE",
+            "만료된 초대 코드입니다."
+    ),
+    ALREADY_JOINED_CREW(
+            HttpStatus.BAD_REQUEST,
+            "ALREADY_JOINED_CREW",
+            "이미 가입된 크루원입니다."
+    ),
     OCR_FAILED(
             HttpStatus.INTERNAL_SERVER_ERROR,
             "OCR_FAILED",
