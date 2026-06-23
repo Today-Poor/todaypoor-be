@@ -1,5 +1,6 @@
 package com.todaypoor.crew.controller;
 
+import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -8,10 +9,18 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 import com.todaypoor.crew.dto.crew.request.CreateCrewRequest;
 import com.todaypoor.crew.dto.crew.request.UpdateCrewRequest;
@@ -28,6 +37,8 @@ import com.todaypoor.expense.entity.ExpenseVisibility;
 import com.todaypoor.global.config.JacksonConfig;
 import com.todaypoor.crew.service.CrewService;
 import com.todaypoor.global.exception.GlobalExceptionHandler;
+import com.todaypoor.global.security.CustomUserDetails;
+import com.todaypoor.user.entity.User;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -41,9 +52,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = CrewController.class)
-@AutoConfigureMockMvc(addFilters = false)
-@Import({GlobalExceptionHandler.class, JacksonConfig.class})
+@AutoConfigureMockMvc
+@Import({GlobalExceptionHandler.class, JacksonConfig.class, CrewControllerTest.TestSecurityConfig.class})
 class CrewControllerTest {
+
+    static class TestSecurityConfig {
+        @Bean
+        SecurityFilterChain testFilterChain(HttpSecurity http) throws Exception {
+            http.csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+            return http.build();
+        }
+    }
 
     @Autowired
     private MockMvc mockMvc;
@@ -87,10 +107,9 @@ class CrewControllerTest {
                 """;
 
         mockMvc.perform(
-                        post("/api/crews")
-                                .header("X-USER-ID", userId.toString())
+                        withAuth(post("/api/crews")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody)
+                                .content(requestBody), userId)
                 )
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
@@ -126,10 +145,9 @@ class CrewControllerTest {
                 """;
 
         mockMvc.perform(
-                        patch("/api/crews/{crewId}", crewId)
-                                .header("X-USER-ID", userId.toString())
+                        withAuth(patch("/api/crews/{crewId}", crewId)
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody)
+                                .content(requestBody), userId)
                 )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -151,8 +169,7 @@ class CrewControllerTest {
         given(crewService.reissueInviteCode(userId, crewId)).willReturn(response);
 
         mockMvc.perform(
-                        post("/api/crews/{crewId}/invite-code/reissue", crewId)
-                                .header("X-USER-ID", userId.toString())
+                        withAuth(post("/api/crews/{crewId}/invite-code/reissue", crewId), userId)
                 )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -171,8 +188,7 @@ class CrewControllerTest {
         given(crewService.getInviteCode(userId, crewId)).willReturn(response);
 
         mockMvc.perform(
-                        post("/api/crews/{crewId}/invite-code", crewId)
-                                .header("X-USER-ID", userId.toString())
+                        withAuth(post("/api/crews/{crewId}/invite-code", crewId), userId)
                 )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -201,8 +217,7 @@ class CrewControllerTest {
         given(crewService.getMyCrews(userId)).willReturn(response);
 
         mockMvc.perform(
-                        get("/api/crews")
-                                .header("X-USER-ID", userId.toString())
+                        withAuth(get("/api/crews"), userId)
                 )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -235,8 +250,7 @@ class CrewControllerTest {
         given(crewService.getCrewDetail(userId, crewId)).willReturn(response);
 
         mockMvc.perform(
-                        get("/api/crews/{crewId}/detail", crewId)
-                                .header("X-USER-ID", userId.toString())
+                        withAuth(get("/api/crews/{crewId}/detail", crewId), userId)
                 )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -252,8 +266,7 @@ class CrewControllerTest {
         UUID crewId = UUID.randomUUID();
 
         mockMvc.perform(
-                        delete("/api/crews/{crewId}", crewId)
-                                .header("X-USER-ID", userId.toString())
+                        withAuth(delete("/api/crews/{crewId}", crewId), userId)
                 )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -293,8 +306,7 @@ class CrewControllerTest {
         given(crewService.getCrewMain(userId, crewId)).willReturn(response);
 
         mockMvc.perform(
-                        get("/api/crews/{crewId}", crewId)
-                                .header("X-USER-ID", userId.toString())
+                        withAuth(get("/api/crews/{crewId}", crewId), userId)
                 )
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -317,13 +329,32 @@ class CrewControllerTest {
                 """;
 
         mockMvc.perform(
-                        post("/api/crews")
-                                .header("X-USER-ID", userId.toString())
+                        withAuth(post("/api/crews")
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(requestBody)
+                                .content(requestBody), userId)
                 )
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+    }
+
+    private MockHttpServletRequestBuilder withAuth(MockHttpServletRequestBuilder builder, UUID userId) {
+        CustomUserDetails userDetails = mockUserDetails(userId);
+        Authentication auth = new UsernamePasswordAuthenticationToken(
+                userDetails, null, userDetails.getAuthorities()
+        );
+        return builder.with(SecurityMockMvcRequestPostProcessors.authentication(auth));
+    }
+
+    private CustomUserDetails mockUserDetails(UUID userId) {
+        User user = User.create("테스트유저");
+        try {
+            Field idField = User.class.getDeclaredField("id");
+            idField.setAccessible(true);
+            idField.set(user, userId);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+        return new CustomUserDetails(user);
     }
 }
