@@ -43,3 +43,7 @@ out/
 
 ### Claude Code ###
 CLAUDE.md
+
+### Local only ###
+docs/api-specs/
+src/main/resources/application-mock.yml

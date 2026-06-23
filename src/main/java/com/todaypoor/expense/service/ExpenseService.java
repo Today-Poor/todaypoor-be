@@ -7,15 +7,22 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import com.todaypoor.ai.client.ClaudeOcrParserClient;
+import com.todaypoor.ai.client.GoogleVisionClient;
 import com.todaypoor.ai.entity.OcrResult;
+import com.todaypoor.crew.entity.Crew;
+import com.todaypoor.crew.repository.CrewRepository;
 import com.todaypoor.expense.dto.request.ExpenseUpdateRequest;
 import com.todaypoor.expense.dto.response.*;
-import com.todaypoor.expense.entity.ExpenseCategory;
 import com.todaypoor.global.exception.BusinessException;
 import com.todaypoor.global.exception.ErrorCode;
+import com.todaypoor.user.repository.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -34,6 +41,11 @@ public class ExpenseService {
 
     private final ExpenseRepository expenseRepository;
     private final OcrResultRepository ocrResultRepository;
+    private final CrewRepository crewRepository;
+    private final UserRepository userRepository;
+    private final GoogleVisionClient googleVisionClient;
+    private final ClaudeOcrParserClient claudeOcrParserClient;
+    private final ObjectMapper objectMapper;
 
     @Transactional
     public ExpenseSaveResponse saveExpenses(UUID userId, UUID crewId, ExpenseSaveRequest request) {
@@ -112,29 +124,30 @@ public class ExpenseService {
         expenseRepository.save(expense);
     }
 
-    public MemberExpenseListResponse getMemberExpenses(UUID crewId, UUID userId, LocalDate date, Pageable pageable) {
+    public MemberExpenseListResponse getMemberExpenses(
+            UUID requestUserId, UUID crewId, UUID targetUserId, LocalDate date, Pageable pageable) {
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
 
         Page<Expense> expensePage = expenseRepository.findByCrewIdAndUserIdAndSpentAtBetweenOrderBySpentAtDesc(
-                crewId, userId, startOfDay, endOfDay, pageable
+                crewId, targetUserId, startOfDay, endOfDay, pageable
         );
 
         long totalAmount = expenseRepository.sumAmountByCrewIdAndUserIdAndDate(
-                crewId, userId, startOfDay, endOfDay).orElse(0L);
+                crewId, targetUserId, startOfDay, endOfDay).orElse(0L);
 
-        // TODO: 크루/유저 도메인 연동 후 실제 데이터로 교체
-        String crewName = "거지방 1조";
-        String nickname = "철수";
-        String profileImageUrl = "https://image-url.com/1.png";
+        String crewName = crewRepository.findByIdAndDeletedAtIsNull(crewId)
+                .map(Crew::getName).orElse(null);
+        String nickname = userRepository.findByIdAndDeletedAtIsNull(targetUserId)
+                .map(user -> user.getNickname()).orElse(null);
 
         return MemberExpenseListResponse.of(
-                crewId, crewName, userId, nickname, profileImageUrl,
-                date, totalAmount, expensePage.getContent()
+                crewId, crewName, targetUserId, nickname, null,
+                date, totalAmount, expensePage.getContent(), requestUserId
         );
     }
 
-    public ExpenseDetailResponse getExpenseDetail(UUID crewId, UUID expenseId) {
+    public ExpenseDetailResponse getExpenseDetail(UUID requestUserId, UUID crewId, UUID expenseId) {
         Expense expense = expenseRepository.findById(expenseId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.EXPENSE_NOT_FOUND));
 
@@ -142,48 +155,54 @@ public class ExpenseService {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
 
-        // TODO: 유저 도메인 연동 후 실제 데이터로 교체
+        String nickname = userRepository.findByIdAndDeletedAtIsNull(expense.getUserId())
+                .map(user -> user.getNickname()).orElse(null);
         ExpenseDetailResponse.UserInfo userInfo = ExpenseDetailResponse.UserInfo.of(
-                expense.getUserId(), "철수", "https://image-url.com/1.png"
+                expense.getUserId(), nickname, null
         );
 
-        // TODO: OCR 도메인 연동 후 실제 데이터로 교체
         ExpenseDetailResponse.OcrResultInfo ocrInfo = null;
         if (expense.getOcrResultId() != null) {
-            ocrInfo = ExpenseDetailResponse.OcrResultInfo.of(
-                    expense.getOcrResultId(),
-                    "맘스터치 대구점 6,500원...",
-                    List.of()
-            );
+            OcrResult ocrResult = ocrResultRepository.findById(expense.getOcrResultId()).orElse(null);
+            if (ocrResult != null) {
+                ocrInfo = ExpenseDetailResponse.OcrResultInfo.of(
+                        ocrResult.getId(), ocrResult.getRawText(), List.of()
+                );
+            }
         }
 
-        return ExpenseDetailResponse.of(expense, userInfo, ocrInfo);
+        return ExpenseDetailResponse.of(expense, requestUserId, userInfo, ocrInfo);
     }
 
-    @Transactional
+    // NOT_SUPPORTED: 클래스 레벨 readOnly 트랜잭션을 억제한다.
+    // OCR·Claude 외부 API 호출(최대 수십 초) 동안 DB 커넥션을 점유하지 않도록,
+    // 트랜잭션 없이 실행하고 ocrResultRepository.save()의 자체 @Transactional에 위임한다.
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public OcrAnalyzeResponse analyzeReceipt(UUID crewId, UUID userId, MultipartFile image) {
 
-        // 1. [Mocking] 구글 Vision API로 이미지 전송 -> 텍스트 추출 (나중에 실제 연동)
-        String mockRawText = "맘스터치 대구점 6,500원 2026.05.20 14:30\n스타벅스 5,800원 2026.05.20 13:10";
+        // 1. Google Vision API로 이미지에서 텍스트 추출
+        String rawText = googleVisionClient.extractText(image);
 
-        // 2. [Mocking] AI 모델에게 텍스트 전달 -> JSON 배열 파싱 (나중에 실제 연동)
-        List<OcrAnalyzeResponse.ParsedExpense> mockParsedList = List.of(
-                OcrAnalyzeResponse.ParsedExpense.of(
-                        "temp-1", ExpenseCategory.FOOD, 6500, "맘스터치 대구점", LocalDateTime.of(2026, 5, 20, 14, 30)
-                ),
-                OcrAnalyzeResponse.ParsedExpense.of(
-                        "temp-2", ExpenseCategory.CAFE, 5800, "스타벅스", LocalDateTime.of(2026, 5, 20, 13, 10)
-                )
-        );
+        // 2. Claude AI로 텍스트에서 소비 내역 구조화 파싱
+        List<OcrAnalyzeResponse.ParsedExpense> parsedList = claudeOcrParserClient.parseExpenses(rawText);
 
+        if (parsedList.isEmpty()) {
+            throw new BusinessException(ErrorCode.EMPTY_PARSED_EXPENSES);
+        }
 
         // 3. OCR 분석 결과를 DB에 저장
-        String mockParsedDataJson = "[{\"category\":\"FOOD\", \"amount\":6500}, {\"category\":\"CAFE\", \"amount\":5800}]";
+        String parsedDataJson = serializeParsedExpenses(parsedList);
+        OcrResult ocrResult = OcrResult.create(rawText, parsedDataJson);
+        ocrResultRepository.save(ocrResult);
 
-        OcrResult ocrResult = OcrResult.create(mockRawText, mockParsedDataJson);
-        ocrResultRepository.save(ocrResult); // DB에 저장하고 UUID 발급받기
+        return OcrAnalyzeResponse.of(ocrResult.getId(), rawText, parsedList);
+    }
 
-        // 4. 발급받은 진짜 DB ID와 가짜 데이터들을 DTO에 담아서 리턴
-        return OcrAnalyzeResponse.of(ocrResult.getId(), mockRawText, mockParsedList);
+    private String serializeParsedExpenses(List<OcrAnalyzeResponse.ParsedExpense> parsedList) {
+        try {
+            return objectMapper.writeValueAsString(parsedList);
+        } catch (JacksonException e) {
+            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
     }
 }

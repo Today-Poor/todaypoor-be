@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import org.mockito.InjectMocks;
@@ -45,6 +46,7 @@ import com.todaypoor.expense.entity.ExpenseVisibility;
 import com.todaypoor.expense.repository.ExpenseRepository;
 import com.todaypoor.global.exception.BusinessException;
 import com.todaypoor.global.exception.ErrorCode;
+import com.todaypoor.user.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 class CrewServiceTest {
@@ -60,6 +62,9 @@ class CrewServiceTest {
 
     @Mock
     private ExpenseRepository expenseRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private CrewService crewService;
@@ -77,6 +82,7 @@ class CrewServiceTest {
             return crew;
         });
         given(crewMemberRepository.save(any(CrewMember.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(userRepository.findByIdAndDeletedAtIsNull(userId)).willReturn(Optional.empty());
 
         CreateCrewResponse response = crewService.createCrew(userId, request);
 
@@ -309,9 +315,11 @@ class CrewServiceTest {
         UUID crewId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
         Crew crew = crewWithId(crewId, "DETAIL12", LocalDateTime.now().plusDays(1));
+        setField(crew, "ownerId", userId); // 요청자가 방장인 상황 설정
 
         given(crewRepository.findByIdAndDeletedAtIsNull(crewId)).willReturn(Optional.of(crew));
         given(crewMemberRepository.countByCrewIdAndDeletedAtIsNull(crewId)).willReturn(2);
+        given(userRepository.findByIdAndDeletedAtIsNull(userId)).willReturn(Optional.empty());
 
         CrewDetailResponse response = crewService.getCrewDetail(userId, crewId);
 
@@ -367,6 +375,7 @@ class CrewServiceTest {
                 .willReturn(Optional.empty());
         given(expenseRepository.findFirstByCrewIdAndUserIdAndDeletedAtIsNullOrderBySpentAtDesc(crewId, memberId))
                 .willReturn(Optional.of(latestExpense));
+        given(userRepository.findAllById(anyList())).willReturn(List.of());
 
         CrewMainResponse response = crewService.getCrewMain(requesterId, crewId);
 

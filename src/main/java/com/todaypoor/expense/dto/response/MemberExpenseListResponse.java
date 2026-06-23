@@ -11,6 +11,7 @@ import com.todaypoor.expense.entity.ExpenseVisibility;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Getter
@@ -25,13 +26,13 @@ public class MemberExpenseListResponse {
     private List<ExpenseSummary> expenses;
 
     public static MemberExpenseListResponse of(
-            UUID crewId, String crewName, UUID userId, String nickname, String profileImageUrl,
-            LocalDate date, long totalAmount, List<Expense> expenseList) {
+            UUID crewId, String crewName, UUID targetUserId, String nickname, String profileImageUrl,
+            LocalDate date, long totalAmount, List<Expense> expenseList, UUID requestUserId) {
 
-        UserInfo userInfo = UserInfo.of(userId, nickname, profileImageUrl);
+        UserInfo userInfo = UserInfo.of(targetUserId, nickname, profileImageUrl);
 
         List<ExpenseSummary> summaries = expenseList.stream()
-                .map(ExpenseSummary::from)
+                .map(expense -> ExpenseSummary.from(expense, requestUserId))
                 .toList();
 
         return new MemberExpenseListResponse(crewId, crewName, userInfo, date, totalAmount, summaries);
@@ -60,14 +61,17 @@ public class MemberExpenseListResponse {
         private ExpenseVisibility visibility;
         private LocalDateTime spentAt;
 
-        public static ExpenseSummary from(Expense expense) {
+        public static ExpenseSummary from(Expense expense, UUID requestUserId) {
+            boolean isOwner = Objects.equals(expense.getUserId(), requestUserId);
+            ExpenseVisibility visibility = expense.getVisibility();
+
             return new ExpenseSummary(
                     expense.getId(),
-                    expense.getCategory(),
-                    expense.getAmount(),
-                    expense.getMerchant(),
-                    expense.getMemo(),
-                    expense.getVisibility(),
+                    isOwner ? expense.getCategory() : visibility.maskCategory(expense.getCategory()),
+                    isOwner ? expense.getAmount()   : visibility.maskAmount(expense.getAmount()),
+                    isOwner ? expense.getMerchant() : visibility.maskMerchant(expense.getMerchant()),
+                    isOwner ? expense.getMemo()     : visibility.maskMemo(expense.getMemo()),
+                    visibility,
                     expense.getSpentAt()
             );
         }

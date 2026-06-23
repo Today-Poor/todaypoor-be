@@ -29,13 +29,10 @@ public record CrewMemberListResponse(
             CrewRole role,
             LocalDateTime joinedAt
     ) {
-        public static CrewMemberList from(CrewMember crewMember) {
-
-            // TODO: User 도메인 연동 후 nickname, profileImageUrl 채울 예정
+        public static CrewMemberList from(CrewMember crewMember, String nickname) {
             return new CrewMemberList(
-
                     crewMember.getUserId(),
-                    null,
+                    nickname,
                     null,
                     crewMember.getRole(),
                     crewMember.getJoinedAt()

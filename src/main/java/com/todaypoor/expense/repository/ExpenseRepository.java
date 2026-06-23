@@ -1,6 +1,7 @@
 package com.todaypoor.expense.repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -36,4 +37,14 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
             UUID crewId,
             UUID userId
     );
+
+    // 배치용: 오늘 지출이 발생한 크루 ID 목록 조회
+    @Query("SELECT DISTINCT e.crewId FROM Expense e WHERE e.spentAt BETWEEN :start AND :end")
+    List<UUID> findDistinctCrewIdsBySpentAtBetween(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
+
+    // 배치용: 특정 크루의 특정 날짜 지출 목록 조회
+    List<Expense> findByCrewIdAndSpentAtBetween(UUID crewId, LocalDateTime start, LocalDateTime end);
 }
