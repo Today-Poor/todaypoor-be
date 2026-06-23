@@ -3,7 +3,6 @@ package com.todaypoor.ranking.service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -21,19 +20,13 @@ import com.todaypoor.expense.repository.ExpenseRepository;
 import com.todaypoor.global.exception.BusinessException;
 import com.todaypoor.global.exception.ErrorCode;
 import com.todaypoor.ranking.entity.AiRankingRun;
-import com.todaypoor.ranking.entity.AiRankingRunStatus;
-import com.todaypoor.ranking.entity.AiResult;
-import com.todaypoor.ranking.entity.AiResultStatus;
 import com.todaypoor.ranking.entity.DailyRankingEvent;
 import com.todaypoor.ranking.entity.RankingEventStatus;
-import com.todaypoor.ranking.entity.RankingResult;
-import com.todaypoor.ranking.mock.MockAiClient;
+import com.todaypoor.ranking.client.ClaudeRankingClient;
 import com.todaypoor.ranking.mock.dto.AiRankingOutput;
 import com.todaypoor.ranking.mock.dto.UserAmountItem;
 import com.todaypoor.ranking.repository.AiRankingRunRepository;
-import com.todaypoor.ranking.repository.AiResultRepository;
 import com.todaypoor.ranking.repository.DailyRankingEventRepository;
-import com.todaypoor.ranking.repository.RankingResultRepository;
 
 @Slf4j
 @Service
@@ -44,10 +37,9 @@ public class InternalRankingService {
 
     private final DailyRankingEventRepository dailyRankingEventRepository;
     private final AiRankingRunRepository aiRankingRunRepository;
-    private final RankingResultRepository rankingResultRepository;
-    private final AiResultRepository aiResultRepository;
     private final ExpenseRepository expenseRepository;
-    private final MockAiClient mockAiClient;
+    private final ClaudeRankingClient claudeRankingClient;
+    private final RankingPersistenceService rankingPersistenceService;
 
     /**
      * 크루의 랭킹 이벤트가 없으면 PENDING 상태로 생성한다.
@@ -65,11 +57,15 @@ public class InternalRankingService {
 
     /**
      * 단일 크루의 일일 랭킹을 생성한다.
-     * REQUIRES_NEW 전파로 크루별로 독립된 트랜잭션에서 실행되어,
-     * 한 크루의 실패가 다른 크루에 영향을 주지 않는다.
+     *
+     * 트랜잭션 전략:
+     *   - 이 메서드 자체는 @Transactional 없음 — Claude API 호출(최대 60초) 동안
+     *     DB 커넥션을 점유하지 않도록 오케스트레이션 레이어만 담당한다.
+     *   - DB 읽기: JPA Repository 자체 트랜잭션으로 처리 (짧은 커넥션 점유)
+     *   - DB 쓰기: rankingPersistenceService.persistResults()가 REQUIRES_NEW 트랜잭션으로 처리
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public DailyRankingEvent processCrewRanking(UUID crewId, LocalDate date) {
+        // 1. 이벤트 조회 (Repository 자체 트랜잭션)
         DailyRankingEvent event = dailyRankingEventRepository
                 .findByCrewIdAndRankingDate(crewId, date)
                 .orElseThrow(() -> new BusinessException(ErrorCode.RANKING_NOT_FOUND));
@@ -79,7 +75,7 @@ public class InternalRankingService {
             return event;
         }
 
-        // 1. 오늘 지출 데이터 수집
+        // 2. 오늘 지출 데이터 수집 (Repository 자체 트랜잭션)
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
 
@@ -87,7 +83,7 @@ public class InternalRankingService {
                 crewId, startOfDay, endOfDay
         );
 
-        // 2. 유저별 지출 합산 및 정렬
+        // 3. 유저별 지출 합산 및 정렬
         Map<UUID, Integer> amountByUser = expenses.stream()
                 .collect(Collectors.groupingBy(
                         Expense::getUserId,
@@ -104,58 +100,17 @@ public class InternalRankingService {
             throw new BusinessException(ErrorCode.INVALID_REQUEST);
         }
 
-        // 3. 입력 데이터 직렬화 (감사 목적)
+        // 4. 입력 데이터 직렬화 (감사 목적)
         String inputData = buildInputDataJson(crewId, date, userAmounts);
 
-        // 4. Mock AI 호출
-        AiRankingOutput output = mockAiClient.generateRanking(userAmounts, inputData);
+        // 5. Claude AI 호출 — 트랜잭션 없음, DB 커넥션 미점유 (최대 60초 대기)
+        AiRankingOutput output = claudeRankingClient.generateRanking(userAmounts, inputData);
 
-        // 5. AiRankingRun 저장
-        AiRankingRun run = aiRankingRunRepository.save(AiRankingRun.create(
-                event.getId(),
-                output.getInputData(),
-                output.getGeneratedTopic(),
-                output.getRankingCriteria(),
-                output.getModel(),
-                output.getInputToken(),
-                output.getOutputToken(),
-                output.getPromptVersion(),
-                AiRankingRunStatus.SUCCESS,
-                null
-        ));
-
-        // 6. RankingResult + AiResult(1~3위) 저장
-        for (AiRankingOutput.UserRankingItem item : output.getUserRankings()) {
-            RankingResult result = rankingResultRepository.save(RankingResult.create(
-                    event.getId(),
-                    run.getId(),
-                    item.getUserId(),
-                    item.getRankNo(),
-                    item.getTotalAmount()
-            ));
-
-            if (item.getRankNo() <= TOP_RANK_LIMIT && item.getTitle() != null) {
-                aiResultRepository.save(AiResult.create(
-                        result.getId(),
-                        item.getTitle(),
-                        item.getRoastMessage(),
-                        item.getMode(),
-                        output.getInputData(),
-                        output.getModel(),
-                        output.getInputToken(),
-                        output.getOutputToken(),
-                        output.getPromptVersion(),
-                        AiResultStatus.SUCCESS,
-                        null
-                ));
-            }
-        }
-
-        // 7. 이벤트 상태 SUCCESS로 업데이트
-        event.updateStatus(RankingEventStatus.SUCCESS);
+        // 6. 결과 저장 — REQUIRES_NEW 트랜잭션으로 짧게 처리
+        DailyRankingEvent saved = rankingPersistenceService.persistResults(event.getId(), output);
 
         log.info("크루 {} 의 {} 랭킹 생성 완료 (eventId={})", crewId, date, event.getId());
-        return event;
+        return saved;
     }
 
     /**

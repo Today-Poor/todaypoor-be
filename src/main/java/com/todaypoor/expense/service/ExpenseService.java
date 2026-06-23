@@ -19,6 +19,7 @@ import com.todaypoor.global.exception.ErrorCode;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -167,7 +168,10 @@ public class ExpenseService {
         return ExpenseDetailResponse.of(expense, requestUserId, userInfo, ocrInfo);
     }
 
-    @Transactional
+    // NOT_SUPPORTED: 클래스 레벨 readOnly 트랜잭션을 억제한다.
+    // OCR·Claude 외부 API 호출(최대 수십 초) 동안 DB 커넥션을 점유하지 않도록,
+    // 트랜잭션 없이 실행하고 ocrResultRepository.save()의 자체 @Transactional에 위임한다.
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public OcrAnalyzeResponse analyzeReceipt(UUID crewId, UUID userId, MultipartFile image) {
 
         // 1. Google Vision API로 이미지에서 텍스트 추출

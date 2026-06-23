@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import com.todaypoor.crew.entity.AiMode;
@@ -14,6 +15,7 @@ import com.todaypoor.ranking.mock.dto.UserAmountItem;
  * TODO: [MOCK] 실제 AI 클라이언트(OpenAI / Claude API) 구현 후 교체 예정.
  * 입력 데이터를 받아 하드코딩된 더미 랭킹 결과를 반환한다.
  */
+@Profile("mock")
 @Component
 public class MockAiClient {
 

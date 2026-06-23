@@ -8,7 +8,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.lang.reflect.Field;
@@ -34,16 +33,12 @@ import com.todaypoor.global.exception.BusinessException;
 import com.todaypoor.global.exception.ErrorCode;
 import com.todaypoor.ranking.entity.AiRankingRun;
 import com.todaypoor.ranking.entity.AiRankingRunStatus;
-import com.todaypoor.ranking.entity.AiResult;
 import com.todaypoor.ranking.entity.DailyRankingEvent;
 import com.todaypoor.ranking.entity.RankingEventStatus;
-import com.todaypoor.ranking.entity.RankingResult;
-import com.todaypoor.ranking.mock.MockAiClient;
+import com.todaypoor.ranking.client.ClaudeRankingClient;
 import com.todaypoor.ranking.mock.dto.AiRankingOutput;
 import com.todaypoor.ranking.repository.AiRankingRunRepository;
-import com.todaypoor.ranking.repository.AiResultRepository;
 import com.todaypoor.ranking.repository.DailyRankingEventRepository;
-import com.todaypoor.ranking.repository.RankingResultRepository;
 
 @ExtendWith(MockitoExtension.class)
 class InternalRankingServiceTest {
@@ -56,13 +51,11 @@ class InternalRankingServiceTest {
     @Mock
     private AiRankingRunRepository aiRankingRunRepository;
     @Mock
-    private RankingResultRepository rankingResultRepository;
-    @Mock
-    private AiResultRepository aiResultRepository;
-    @Mock
     private ExpenseRepository expenseRepository;
     @Mock
-    private MockAiClient mockAiClient;
+    private ClaudeRankingClient claudeRankingClient;
+    @Mock
+    private RankingPersistenceService rankingPersistenceService;
 
     // ────────────────────────────────────────────────────────────
     // processCrewRanking
@@ -91,23 +84,18 @@ class InternalRankingServiceTest {
                 .willReturn(Optional.of(event));
         given(expenseRepository.findByCrewIdAndSpentAtBetween(eq(crewId), any(), any()))
                 .willReturn(List.of(expense1, expense2));
-        given(mockAiClient.generateRanking(anyList(), anyString()))
+        given(claudeRankingClient.generateRanking(anyList(), anyString()))
                 .willReturn(mockOutput);
-        given(aiRankingRunRepository.save(any(AiRankingRun.class)))
-                .willAnswer(inv -> { setField(inv.getArgument(0), "id", UUID.randomUUID()); return inv.getArgument(0); });
-        given(rankingResultRepository.save(any(RankingResult.class)))
-                .willAnswer(inv -> { setField(inv.getArgument(0), "id", UUID.randomUUID()); return inv.getArgument(0); });
-        given(aiResultRepository.save(any(AiResult.class)))
-                .willAnswer(inv -> inv.getArgument(0));
+        given(rankingPersistenceService.persistResults(eq(event.getId()), any(AiRankingOutput.class)))
+                .willAnswer(inv -> { event.updateStatus(RankingEventStatus.SUCCESS); return event; });
 
         // when
         DailyRankingEvent result = internalRankingService.processCrewRanking(crewId, date);
 
         // then
         assertThat(result.getStatus()).isEqualTo(RankingEventStatus.SUCCESS);
-        verify(aiRankingRunRepository).save(any(AiRankingRun.class));
-        verify(rankingResultRepository, times(2)).save(any(RankingResult.class));
-        verify(aiResultRepository, times(2)).save(any(AiResult.class)); // 1, 2위 모두 top3 이하
+        verify(claudeRankingClient).generateRanking(anyList(), anyString());
+        verify(rankingPersistenceService).persistResults(eq(event.getId()), any(AiRankingOutput.class));
     }
 
     @Test
@@ -137,20 +125,17 @@ class InternalRankingServiceTest {
                         expense(userIds.get(2), crewId, 3000),
                         expense(userIds.get(3), crewId, 1000)
                 ));
-        given(mockAiClient.generateRanking(anyList(), anyString())).willReturn(mockOutput);
-        given(aiRankingRunRepository.save(any(AiRankingRun.class)))
-                .willAnswer(inv -> { setField(inv.getArgument(0), "id", UUID.randomUUID()); return inv.getArgument(0); });
-        given(rankingResultRepository.save(any(RankingResult.class)))
-                .willAnswer(inv -> { setField(inv.getArgument(0), "id", UUID.randomUUID()); return inv.getArgument(0); });
-        given(aiResultRepository.save(any(AiResult.class)))
-                .willAnswer(inv -> inv.getArgument(0));
+        given(claudeRankingClient.generateRanking(anyList(), anyString())).willReturn(mockOutput);
+        given(rankingPersistenceService.persistResults(any(UUID.class), any(AiRankingOutput.class)))
+                .willAnswer(inv -> { userIds.forEach(id -> {}); return pendingEventWithId(crewId, date); });
 
         // when
         internalRankingService.processCrewRanking(crewId, date);
 
-        // then: 4명 중 1~3위만 AiResult 저장
-        verify(rankingResultRepository, times(4)).save(any(RankingResult.class));
-        verify(aiResultRepository, times(3)).save(any(AiResult.class));
+        // then: Claude 호출 후 persistResults에 위임됐는지 확인
+        // 1~3위 AiResult 저장 여부는 RankingPersistenceServiceTest에서 검증
+        verify(claudeRankingClient).generateRanking(anyList(), anyString());
+        verify(rankingPersistenceService).persistResults(any(UUID.class), any(AiRankingOutput.class));
     }
 
     @Test
@@ -171,7 +156,7 @@ class InternalRankingServiceTest {
         // then
         assertThat(result.getStatus()).isEqualTo(RankingEventStatus.SUCCESS);
         verify(expenseRepository, never()).findByCrewIdAndSpentAtBetween(any(), any(), any());
-        verify(mockAiClient, never()).generateRanking(any(), any());
+        verify(claudeRankingClient, never()).generateRanking(any(), any());
     }
 
     @Test
@@ -192,7 +177,7 @@ class InternalRankingServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_REQUEST);
 
-        verify(mockAiClient, never()).generateRanking(any(), any());
+        verify(claudeRankingClient, never()).generateRanking(any(), any());
     }
 
     @Test
