@@ -287,7 +287,10 @@ public class CrewService {
         crewAuthorizationService.validateOwner(crewId, userId);
 
         Crew crew = crewRepository.findByIdAndDeletedAtIsNull(crewId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.CREW_NOT_FOUND));
+                .orElseThrow(() -> {
+                    log.warn("크루 삭제 실패. 존재하지 않는 크루입니다. 크루 ID: {}", crewId);
+                    return new BusinessException(ErrorCode.CREW_NOT_FOUND);
+                });
 
         crew.softDelete();
         crewRepository.save(crew);
@@ -295,6 +298,8 @@ public class CrewService {
         List<CrewMember> crewMembers = crewMemberRepository.findByCrewIdAndDeletedAtIsNull(crewId);
         crewMembers.forEach(CrewMember::softDelete);
         crewMemberRepository.saveAll(crewMembers);
+
+        log.info("크루 삭제 완료. 크루 ID: {}, 삭제 실행자(방장) ID: {}, 일괄 삭제된 크루 멤버 수: {}", crewId, userId, crewMembers.size());
     }
 
     public CrewMainResponse getCrewMain(UUID userId, UUID crewId) {
