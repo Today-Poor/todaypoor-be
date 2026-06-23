@@ -49,7 +49,7 @@ jobs:
             
             # 1초 대기 후 백그라운드에서 신규 실행
             sleep 1
-            nohup java -jar \
+            nohup java \
               -DKAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }} \
               -DKAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }} \
               -DJWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }} \
@@ -57,4 +57,4 @@ jobs:
               -Dspring.datasource.username=${{ secrets.DB_USERNAME }} \
               -Dspring.datasource.password=${{ secrets.DB_PASSWORD }} \
               -DCLAUDE_API_KEY=${{ secrets.CLAUDE_API_KEY }} \
-              todaypoor-be-0.0.1-SNAPSHOT.jar > nohup.out 2>&1 &
+              -jar todaypoor-be-0.0.1-SNAPSHOT.jar > nohup.out 2>&1 &
