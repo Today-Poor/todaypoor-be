@@ -1,7 +1,10 @@
 package com.todaypoor.auth.service;
 
 import com.todaypoor.auth.dto.TokenResponse;
+import com.todaypoor.global.exception.BusinessException;
+import com.todaypoor.global.exception.ErrorCode;
 import com.todaypoor.global.security.TokenProvider;
+import io.jsonwebtoken.ExpiredJwtException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -62,9 +65,26 @@ class AuthServiceTest {
 
         // when & then
         assertThatThrownBy(() -> authService.reissue(invalidToken))
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_REFRESH_TOKEN);
 
         verify(tokenProvider, times(1)).validateToken(invalidToken);
+        verify(tokenProvider, never()).extractUserId(any());
+    }
+
+    @Test
+    @DisplayName("만료된 Refresh Token으로 reissue 요청 시 예외를 던진다")
+    void reissue_Fail_ExpiredToken() {
+        // given
+        String expiredToken = "expired-token";
+        doThrow(new ExpiredJwtException(null, null, "Expired token")).when(tokenProvider).validateToken(expiredToken);
+
+        // when & then
+        assertThatThrownBy(() -> authService.reissue(expiredToken))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.EXPIRED_REFRESH_TOKEN);
+
+        verify(tokenProvider, times(1)).validateToken(expiredToken);
         verify(tokenProvider, never()).extractUserId(any());
     }
 }

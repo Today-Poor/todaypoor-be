@@ -335,19 +335,27 @@ class CrewServiceTest {
     }
 
     @Test
-    void deleteCrew_success_softDeletesCrew() {
+    void deleteCrew_success_softDeletesCrewAndMembers() {
         UUID crewId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
         Crew crew = crewWithId(crewId, "DELETE12", LocalDateTime.now().plusDays(1));
+        CrewMember owner = CrewMember.createOwner(crewId, userId);
+        CrewMember member = CrewMember.createMember(crewId, UUID.randomUUID());
 
         given(crewRepository.findByIdAndDeletedAtIsNull(crewId)).willReturn(Optional.of(crew));
+        given(crewMemberRepository.findByCrewIdAndDeletedAtIsNull(crewId)).willReturn(List.of(owner, member));
 
         assertFalse(crew.isDeleted());
+        assertFalse(owner.isDeleted());
+        assertFalse(member.isDeleted());
 
         crewService.deleteCrew(userId, crewId);
 
         assertTrue(crew.isDeleted());
+        assertTrue(owner.isDeleted());
+        assertTrue(member.isDeleted());
         verify(crewRepository).save(crew);
+        verify(crewMemberRepository).saveAll(anyList());
         verify(crewAuthorizationService).validateOwner(crewId, userId);
     }
 

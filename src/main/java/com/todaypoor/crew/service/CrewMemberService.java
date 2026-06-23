@@ -47,24 +47,40 @@ public class CrewMemberService {
         String inviteCode = normalizeInviteCode(request.inviteCode());
 
         Crew crew = crewRepository.findByInviteCodeAndDeletedAtIsNull(inviteCode)
-                .orElseThrow(() -> new BusinessException(ErrorCode.CREW_NOT_FOUND));
+                .orElseThrow(() -> {
+                    log.warn("크루를 찾을 수 없습니다. 초대코드: {}", inviteCode);
+                    return new BusinessException(ErrorCode.CREW_NOT_FOUND);
+                });
 
         if (crew.getInviteCodeExpiresAt() == null || !crew.getInviteCodeExpiresAt().isAfter(LocalDateTime.now())) {
-            throw new BusinessException(ErrorCode.INVALID_REQUEST); // 만료된 초대코드
+            log.warn("만료된 초대코드입니다. 초대코드: {}, 크루 ID: {}", inviteCode, crew.getId());
+            throw new BusinessException(ErrorCode.EXPIRED_INVITE_CODE);
         }
 
         if (crewMemberRepository.existsByCrewIdAndUserIdAndDeletedAtIsNull(crew.getId(), userId)) {
-            throw new BusinessException(ErrorCode.INVALID_REQUEST); // 이미 가입된 메머버
+            log.warn("이미 가입된 크루 멤버입니다. 유저 ID: {}, 크루 ID: {}", userId, crew.getId());
+            throw new BusinessException(ErrorCode.ALREADY_JOINED_CREW);
+        }
+
+        Integer currentMemberCount = crewMemberRepository.countByCrewIdAndDeletedAtIsNull(crew.getId());
+        if (currentMemberCount >= crew.getMaxMemberCount()) {
+            log.warn("크루 인원수 제한을 초과했습니다. 크루 ID: {}, 현재 정원: {}, 최대 제한: {}, 가입 시도 유저 ID: {}", crew.getId(), currentMemberCount, crew.getMaxMemberCount(), userId);
+            throw new BusinessException(ErrorCode.CREW_MEMBER_LIMIT_EXCEEDED);
         }
 
         CrewMember crewMember = crewMemberRepository.findDeletedMember(crew.getId(), userId)
                 .map(deletedMember -> { // soft delete 된 멤버 값이 있을 때만 수행
+                    log.info("기존에 탈퇴한 크루 멤버 기록이 있어 복구를 진행합니다. 크루 ID: {}, 유저 ID: {}", crew.getId(), userId);
                     deletedMember.restoreMember(CrewRole.MEMBER);
                     return crewMemberRepository.save(deletedMember);
                 })
-                .orElseGet(() -> crewMemberRepository.save(CrewMember.createMember(crew.getId(), userId)));
+                .orElseGet(() -> {
+                    log.info("신규 크루 멤버를 등록합니다. 크루 ID: {}, 유저 ID: {}", crew.getId(), userId);
+                    return crewMemberRepository.save(CrewMember.createMember(crew.getId(), userId));
+                });
 
-        Integer currentMemberCount = crewMemberRepository.countByCrewIdAndDeletedAtIsNull(crew.getId());
+        currentMemberCount = crewMemberRepository.countByCrewIdAndDeletedAtIsNull(crew.getId());
+        log.info("유저가 성공적으로 크루에 가입했습니다. 유저 ID: {}, 크루 ID: {}, 현재 멤버 수: {}", userId, crew.getId(), currentMemberCount);
 
         return JoinCrewResponse.of(crew, crewMember, currentMemberCount);
     }

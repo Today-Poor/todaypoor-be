@@ -124,7 +124,7 @@ class CrewMemberServiceTest {
                 () -> crewMemberService.joinCrew(userId, new JoinCrewRequest("expired1"))
         );
 
-        assertEquals(ErrorCode.INVALID_REQUEST, exception.getErrorCode());
+        assertEquals(ErrorCode.EXPIRED_INVITE_CODE, exception.getErrorCode());
         verifyNoInteractions(crewMemberRepository);
     }
 
@@ -142,7 +142,26 @@ class CrewMemberServiceTest {
                 () -> crewMemberService.joinCrew(userId, new JoinCrewRequest("dupl1234"))
         );
 
-        assertEquals(ErrorCode.INVALID_REQUEST, exception.getErrorCode());
+        assertEquals(ErrorCode.ALREADY_JOINED_CREW, exception.getErrorCode());
+    }
+
+    @Test
+    void joinCrew_limitExceeded_throwsBusinessException() {
+        UUID crewId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        Crew crew = crewWithId(crewId, "LIMIT123", LocalDateTime.now().plusDays(1));
+
+        given(crewRepository.findByInviteCodeAndDeletedAtIsNull("LIMIT123")).willReturn(Optional.of(crew));
+        given(crewMemberRepository.existsByCrewIdAndUserIdAndDeletedAtIsNull(crewId, userId)).willReturn(false);
+        given(crewMemberRepository.countByCrewIdAndDeletedAtIsNull(crewId)).willReturn(5);
+
+        BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> crewMemberService.joinCrew(userId, new JoinCrewRequest("limit123"))
+        );
+
+        assertEquals(ErrorCode.CREW_MEMBER_LIMIT_EXCEEDED, exception.getErrorCode());
+        verify(crewMemberRepository).countByCrewIdAndDeletedAtIsNull(crewId);
     }
 
     @Test

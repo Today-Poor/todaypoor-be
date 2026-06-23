@@ -106,7 +106,6 @@ class CrewMemberControllerTest {
         CrewMemberListResponse.CrewMemberList member = new CrewMemberListResponse.CrewMemberList(
                 userId,
                 null,
-                null,
                 CrewRole.OWNER,
                 now
         );
@@ -137,7 +136,6 @@ class CrewMemberControllerTest {
         CrewMemberDetailResponse response = new CrewMemberDetailResponse(
                 crewId,
                 targetMemberId,
-                null,
                 null,
                 CrewRole.MEMBER,
                 now

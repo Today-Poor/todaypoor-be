@@ -81,12 +81,11 @@
 
 ---
 
-## 5. 공통 헤더 및 인증 규약
+## 5. 공통 인증 규약 (Spring Security)
 
-모든 API에서 현재 로그인한 사용자의 정보를 식별하기 위해 아래 헤더를 사용합니다.
-- **Header Key**: `X-USER-ID`
-- **Type**: `UUID`
-- **Usage**: 컨트롤러에서 `@RequestHeader("X-USER-ID") UUID userId` 형태로 주입받아 사용합니다.
+모든 API에서 현재 로그인한 사용자의 정보를 식별하기 위해 Spring Security의 `@AuthenticationPrincipal`을 사용합니다.
+- **주입 객체**: `CustomUserDetails`
+- **사용법**: 컨트롤러 메서드 파라미터에 `@AuthenticationPrincipal CustomUserDetails userDetails` 형태로 주입받아, `userDetails.getUserId()` 메서드로 유저 고유 식별자(UUID)를 획득하여 사용합니다.
 
 ---
 
@@ -174,10 +173,10 @@ if (crew == null) {
 ```java
 @PostMapping("/expenses")
 public ResponseEntity<ApiResponse<ExpenseCreateResponse>> create(
-        @RequestHeader("X-USER-ID") UUID userId, 
+        @AuthenticationPrincipal CustomUserDetails userDetails, 
         @Valid @RequestBody ExpenseCreateRequest request
 ) {
-    ExpenseCreateResponse response = expenseService.create(userId, request);
+    ExpenseCreateResponse response = expenseService.create(userDetails.getUserId(), request);
     return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
 }
 ```

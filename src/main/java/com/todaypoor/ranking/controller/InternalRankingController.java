@@ -23,7 +23,10 @@ import com.todaypoor.ranking.entity.DailyRankingEvent;
 import com.todaypoor.ranking.entity.RankingEventStatus;
 import com.todaypoor.ranking.repository.DailyRankingEventRepository;
 import com.todaypoor.ranking.service.InternalRankingService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "내부 관리자 (Internal Admin)", description = "일일 랭킹 생성 강제화 및 재시도 등을 처리하는 내부 시스템 API")
 @RestController
 @RequestMapping("/internal")
 @RequiredArgsConstructor
@@ -32,10 +35,7 @@ public class InternalRankingController {
     private final InternalRankingService internalRankingService;
     private final DailyRankingEventRepository dailyRankingEventRepository;
 
-    /**
-     * 특정 크루의 오늘 일일 랭킹을 강제 생성한다.
-     * 이미 SUCCESS 상태라면 기존 이벤트를 그대로 반환한다.
-     */
+    @Operation(summary = "크루 일일 랭킹 강제 생성", description = "특정 크루의 오늘의 일일 랭킹을 즉시 강제로 생성 처리합니다.")
     @PostMapping("/crews/{crewId}/rankings")
     public ResponseEntity<ApiResponse<RankingGenerateResponse>> generateCrewRanking(
             @PathVariable UUID crewId
@@ -51,9 +51,7 @@ public class InternalRankingController {
                 .body(ApiResponse.success(RankingGenerateResponse.from(event)));
     }
 
-    /**
-     * FAILED 또는 PENDING 상태인 랭킹 이벤트를 재시도한다.
-     */
+    @Operation(summary = "랭킹 생성 이벤트 재시도", description = "실패(FAILED) 혹은 대기(PENDING) 상태인 랭킹 생성 이벤트를 재시도 처리합니다.")
     @PostMapping("/ranking-events/{rankingEventId}/retry")
     public ResponseEntity<ApiResponse<RankingGenerateResponse>> retryRankingEvent(
             @PathVariable UUID rankingEventId
@@ -76,9 +74,7 @@ public class InternalRankingController {
         }
     }
 
-    /**
-     * 특정 랭킹 이벤트의 최신 AI 실행 기록(토큰 수, 프롬프트 내용 등)을 조회한다.
-     */
+    @Operation(summary = "최신 AI 실행 기록 조회", description = "지정한 랭킹 이벤트와 관련된 AI API 실행 상세 내역(입출력 토큰, 프롬프트 로그 등)을 조회합니다.")
     @GetMapping("/ranking-events/{rankingEventId}/run")
     public ResponseEntity<ApiResponse<AiRankingRunResponse>> getRankingRun(
             @PathVariable UUID rankingEventId
