@@ -26,10 +26,10 @@ public class MemberExpenseListResponse {
     private List<ExpenseSummary> expenses;
 
     public static MemberExpenseListResponse of(
-            UUID crewId, String crewName, UUID targetUserId, String nickname, String profileImageUrl,
+            UUID crewId, String crewName, UUID targetUserId, String nickname,
             LocalDate date, long totalAmount, List<Expense> expenseList, UUID requestUserId) {
 
-        UserInfo userInfo = UserInfo.of(targetUserId, nickname, profileImageUrl);
+        UserInfo userInfo = UserInfo.of(targetUserId, nickname);
 
         List<ExpenseSummary> summaries = expenseList.stream()
                 .map(expense -> ExpenseSummary.from(expense, requestUserId))
@@ -43,10 +43,9 @@ public class MemberExpenseListResponse {
     public static class UserInfo {
         private UUID userId;
         private String nickname;
-        private String profileImageUrl;
 
-        public static UserInfo of(UUID userId, String nickname, String profileImageUrl) {
-            return new UserInfo(userId, nickname, profileImageUrl);
+        public static UserInfo of(UUID userId, String nickname) {
+            return new UserInfo(userId, nickname);
         }
     }
 

@@ -55,10 +55,9 @@ public class ExpenseDetailResponse {
     public static class UserInfo {
         private UUID userId;
         private String nickname;
-        private String profileImageUrl;
 
-        public static UserInfo of(UUID userId, String nickname, String profileImageUrl) {
-            return new UserInfo(userId, nickname, profileImageUrl);
+        public static UserInfo of(UUID userId, String nickname) {
+            return new UserInfo(userId, nickname);
         }
     }
 
