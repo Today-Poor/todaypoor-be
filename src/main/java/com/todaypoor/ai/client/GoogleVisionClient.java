@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -27,8 +28,14 @@ public class GoogleVisionClient {
 
     public GoogleVisionClient(@Value("${ocr.ocrspace.api-key:helloworld}") String apiKey) {
         this.apiKey = apiKey;
+
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(10_000);
+        factory.setReadTimeout(30_000);
+
         this.restClient = RestClient.builder()
                 .baseUrl("https://api.ocr.space")
+                .requestFactory(factory)
                 .build();
     }
 
