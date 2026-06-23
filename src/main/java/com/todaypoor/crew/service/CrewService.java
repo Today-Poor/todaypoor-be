@@ -289,9 +289,12 @@ public class CrewService {
         Crew crew = crewRepository.findByIdAndDeletedAtIsNull(crewId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CREW_NOT_FOUND));
 
-        // TODO: Crew softDelete 시 CrewMember도 softDelete 예정
         crew.softDelete();
         crewRepository.save(crew);
+
+        List<CrewMember> crewMembers = crewMemberRepository.findByCrewIdAndDeletedAtIsNull(crewId);
+        crewMembers.forEach(CrewMember::softDelete);
+        crewMemberRepository.saveAll(crewMembers);
     }
 
     public CrewMainResponse getCrewMain(UUID userId, UUID crewId) {
