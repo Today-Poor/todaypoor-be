@@ -25,6 +25,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.todaypoor.crew.entity.AiMode;
 import com.todaypoor.crew.repository.CrewRepository;
 import com.todaypoor.crew.service.CrewAuthorizationService;
+import com.todaypoor.user.entity.User;
+import com.todaypoor.user.repository.UserRepository;
 import com.todaypoor.global.exception.BusinessException;
 import com.todaypoor.global.exception.ErrorCode;
 import com.todaypoor.ranking.dto.TodayRankingResult;
@@ -59,6 +61,8 @@ class RankingServiceTest {
     private CrewAuthorizationService crewAuthorizationService;
     @Mock
     private CrewRepository crewRepository;
+    @Mock
+    private UserRepository userRepository;
 
     // ────────────────────────────────────────────────────────────
     // getTodayRanking — PENDING
@@ -160,6 +164,8 @@ class RankingServiceTest {
                 .willReturn(List.of(r1, r2, r3, r4));
         given(aiResultRepository.findByRankingResultIdIn(anyList()))
                 .willReturn(aiResults);
+        given(userRepository.findAllById(anyList()))
+                .willReturn(List.of());
         given(crewRepository.findByIdAndDeletedAtIsNull(crewId))
                 .willReturn(Optional.empty());
 
@@ -222,6 +228,8 @@ class RankingServiceTest {
                 .willReturn(List.of(r1));
         given(aiResultRepository.findByRankingResultIdIn(anyList()))
                 .willReturn(aiResults);
+        given(userRepository.findAllById(anyList()))
+                .willReturn(List.of());
         given(crewRepository.findByIdAndDeletedAtIsNull(crewId))
                 .willReturn(Optional.empty());
 

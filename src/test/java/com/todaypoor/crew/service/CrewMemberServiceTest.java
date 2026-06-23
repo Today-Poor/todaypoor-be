@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.BDDMockito.given;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -33,6 +34,7 @@ import com.todaypoor.crew.repository.CrewMemberRepository;
 import com.todaypoor.crew.repository.CrewRepository;
 import com.todaypoor.global.exception.BusinessException;
 import com.todaypoor.global.exception.ErrorCode;
+import com.todaypoor.user.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 class CrewMemberServiceTest {
@@ -45,6 +47,9 @@ class CrewMemberServiceTest {
 
     @Mock
     private CrewAuthorizationService crewAuthorizationService;
+
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private CrewMemberService crewMemberService;
@@ -150,6 +155,7 @@ class CrewMemberServiceTest {
 
         given(crewRepository.findByIdAndDeletedAtIsNull(crewId)).willReturn(Optional.of(crew));
         given(crewMemberRepository.findByCrewIdAndDeletedAtIsNull(crewId)).willReturn(List.of(member1, member2));
+        given(userRepository.findAllById(anyList())).willReturn(List.of());
 
         CrewMemberListResponse response = crewMemberService.getCrewMembers(userId, crewId);
 
@@ -169,6 +175,7 @@ class CrewMemberServiceTest {
 
         given(crewAuthorizationService.validateMember(crewId, requesterId)).willReturn(requesterMember);
         given(crewAuthorizationService.validateMember(crewId, targetUserId)).willReturn(targetMember);
+        given(userRepository.findByIdAndDeletedAtIsNull(targetUserId)).willReturn(Optional.empty());
 
         CrewMemberDetailResponse response = crewMemberService.getCrewMemberDetail(requesterId, crewId, targetUserId);
 
