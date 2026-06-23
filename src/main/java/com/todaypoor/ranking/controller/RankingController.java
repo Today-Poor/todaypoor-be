@@ -19,7 +19,10 @@ import com.todaypoor.global.security.CustomUserDetails;
 import com.todaypoor.ranking.dto.TodayRankingResult;
 import com.todaypoor.ranking.dto.response.RankingResponse;
 import com.todaypoor.ranking.service.RankingService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "소비 랭킹 (Ranking)", description = "크루 내 소비 지출 일일 랭킹 및 피드백 조회 API")
 @RestController
 @RequestMapping("/api/crews/{crewId}/rankings")
 @RequiredArgsConstructor
@@ -27,13 +30,7 @@ public class RankingController {
 
     private final RankingService rankingService;
 
-    /**
-     * 오늘 랭킹 조회.
-     * 상태에 따라 세 가지 응답을 모두 200 OK로 반환한다.
-     * - SUCCESS  : 전체 랭킹 데이터 (1~3위 + 나머지)
-     * - PENDING  : 아직 생성 전, 예상 오픈 시각 안내
-     * - FAILED   : 생성 실패
-     */
+    @Operation(summary = "오늘의 소비 랭킹 조회", description = "현재 크루의 오늘의 소비 랭킹 및 AI 피드백을 조회합니다. 상태에 따라 성공(SUCCESS), 대기(PENDING), 실패(FAILED) 응답을 반환합니다.")
     @GetMapping("/today")
     public ResponseEntity<ApiResponse<?>> getTodayRanking(
             @PathVariable UUID crewId,
@@ -61,10 +58,7 @@ public class RankingController {
         return ResponseEntity.ok(ApiResponse.success(result.getRankingResponse()));
     }
 
-    /**
-     * 특정 날짜 랭킹 조회.
-     * SUCCESS 상태의 랭킹만 반환하며, 없으면 RANKING_NOT_FOUND 에러가 발생한다.
-     */
+    @Operation(summary = "특정 날짜의 소비 랭킹 조회", description = "특정 크루의 지정한 날짜의 소비 랭킹 및 AI 피드백을 조회합니다. 성공(SUCCESS) 상태인 랭킹만 반환합니다.")
     @GetMapping
     public ResponseEntity<ApiResponse<RankingResponse>> getRankingByDate(
             @PathVariable UUID crewId,
