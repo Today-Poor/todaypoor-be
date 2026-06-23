@@ -10,6 +10,9 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import com.todaypoor.crew.dto.crew.request.CreateCrewRequest;
 import com.todaypoor.crew.dto.crew.request.UpdateCrewRequest;
 import com.todaypoor.crew.dto.crew.response.CreateCrewResponse;
@@ -29,6 +32,8 @@ import com.todaypoor.expense.entity.Expense;
 import com.todaypoor.expense.repository.ExpenseRepository;
 import com.todaypoor.global.exception.BusinessException;
 import com.todaypoor.global.exception.ErrorCode;
+import com.todaypoor.user.entity.User;
+import com.todaypoor.user.repository.UserRepository;
 
 @Service
 @Slf4j
@@ -40,6 +45,7 @@ public class CrewService {
     private final CrewMemberRepository crewMemberRepository;
     private final CrewAuthorizationService crewAuthorizationService;
     private final ExpenseRepository expenseRepository;
+    private final UserRepository userRepository;
 
     private static final int INVITE_CODE_EXPIRE_DAYS = 7;
     private static final int INVITE_CODE_LENGTH = 8;
@@ -71,12 +77,9 @@ public class CrewService {
 
         Integer currentMemberCount = 1;
 
-        // TODO: User 도메인 연동 후 owner의 nickname, profileImageUrl을 실제 사용자 정보로 채울 예정
-        CreateCrewResponse.Owner owner = new CreateCrewResponse.Owner(
-                userId,
-                null,
-                null
-        );
+        String ownerNickname = userRepository.findByIdAndDeletedAtIsNull(userId)
+                .map(User::getNickname).orElse(null);
+        CreateCrewResponse.Owner owner = new CreateCrewResponse.Owner(userId, ownerNickname, null);
 
         return CreateCrewResponse.of(savedCrew, owner, currentMemberCount);
     }
@@ -266,12 +269,9 @@ public class CrewService {
         Crew crew = crewRepository.findByIdAndDeletedAtIsNull(crewId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CREW_NOT_FOUND));
 
-        // TODO: User 도메인 연동 후 owner의 nickname, profileImageUrl을 실제 사용자 정보로 채울 예정
-        CrewDetailResponse.Owner owner = new CrewDetailResponse.Owner(
-                userId,
-                null,
-                null
-        );
+        String ownerNickname = userRepository.findByIdAndDeletedAtIsNull(crew.getOwnerId())
+                .map(User::getNickname).orElse(null);
+        CrewDetailResponse.Owner owner = new CrewDetailResponse.Owner(crew.getOwnerId(), ownerNickname, null);
 
         Integer currentMemberCount = crewMemberRepository.countByCrewIdAndDeletedAtIsNull(crewId);
 
@@ -306,7 +306,12 @@ public class CrewService {
 
         Integer currentMemberCount = crewMemberRepository.countByCrewIdAndDeletedAtIsNull(crewId);
 
-        List<MemberSummary> members = crewMemberRepository.findByCrewIdAndDeletedAtIsNull(crewId).stream()
+        List<CrewMember> crewMembers = crewMemberRepository.findByCrewIdAndDeletedAtIsNull(crewId);
+        List<UUID> memberUserIds = crewMembers.stream().map(CrewMember::getUserId).toList();
+        Map<UUID, String> nicknameMap = userRepository.findAllById(memberUserIds).stream()
+                .collect(Collectors.toMap(User::getId, User::getNickname));
+
+        List<MemberSummary> members = crewMembers.stream()
                 .map(crewMember -> {
                     Expense latestExpense = expenseRepository
                             .findFirstByCrewIdAndUserIdAndDeletedAtIsNullOrderBySpentAtDesc(crewId, crewMember.getUserId())
@@ -314,7 +319,8 @@ public class CrewService {
 
                     return MemberSummary.of(
                             crewMember,
-                            LatestExpense.from(latestExpense, userId)
+                            LatestExpense.from(latestExpense, userId),
+                            nicknameMap.get(crewMember.getUserId())
                     );
                 })
                 .toList();

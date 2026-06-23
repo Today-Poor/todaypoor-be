@@ -77,13 +77,12 @@ public class RankingResponse {
         private UserInfo user;
         private AiResultInfo aiResult;
 
-        public static RankedEntry of(RankingResult result, AiResult aiResult) {
-            // TODO: User 도메인 연동 후 실제 사용자 정보로 교체
+        public static RankedEntry of(RankingResult result, AiResult aiResult, String nickname) {
             return new RankedEntry(
                     result.getId(),
                     result.getRankNo(),
                     result.getTotalAmount(),
-                    UserInfo.placeholder(result.getUserId()),
+                    UserInfo.of(result.getUserId(), nickname, null),
                     AiResultInfo.from(aiResult)
             );
         }
@@ -106,9 +105,8 @@ public class RankingResponse {
         private String profileImageUrl;
         private int totalAmount;
 
-        public static OtherEntry from(RankingResult result) {
-            // TODO: User 도메인 연동 후 실제 사용자 정보로 교체
-            return new OtherEntry(result.getUserId(), null, null, result.getTotalAmount());
+        public static OtherEntry from(RankingResult result, String nickname) {
+            return new OtherEntry(result.getUserId(), nickname, null, result.getTotalAmount());
         }
 
         /** Mock 전용 팩토리 */
@@ -125,12 +123,6 @@ public class RankingResponse {
         private String nickname;
         private String profileImageUrl;
 
-        static UserInfo placeholder(UUID userId) {
-            // TODO: User 도메인 연동 후 실제 사용자 정보로 교체
-            return new UserInfo(userId, null, null);
-        }
-
-        /** Mock 전용 팩토리 — 닉네임과 프로필 이미지를 직접 지정한다. */
         public static UserInfo of(UUID userId, String nickname, String profileImageUrl) {
             return new UserInfo(userId, nickname, profileImageUrl);
         }

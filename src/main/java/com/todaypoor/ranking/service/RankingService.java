@@ -28,6 +28,8 @@ import com.todaypoor.ranking.repository.AiRankingRunRepository;
 import com.todaypoor.ranking.repository.AiResultRepository;
 import com.todaypoor.ranking.repository.DailyRankingEventRepository;
 import com.todaypoor.ranking.repository.RankingResultRepository;
+import com.todaypoor.user.entity.User;
+import com.todaypoor.user.repository.UserRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +44,7 @@ public class RankingService {
     private final AiResultRepository aiResultRepository;
     private final CrewAuthorizationService crewAuthorizationService;
     private final CrewRepository crewRepository;
+    private final UserRepository userRepository;
 
     public TodayRankingResult getTodayRanking(UUID userId, UUID crewId) {
         crewAuthorizationService.validateMember(crewId, userId);
@@ -95,21 +98,24 @@ public class RankingService {
                 .stream()
                 .collect(Collectors.toMap(AiResult::getRankingResultId, a -> a));
 
+        List<UUID> allUserIds = allResults.stream().map(RankingResult::getUserId).toList();
+        Map<UUID, String> nicknameMap = userRepository.findAllById(allUserIds).stream()
+                .collect(Collectors.toMap(User::getId, User::getNickname));
+
         List<RankingResponse.RankedEntry> rankings = topResults.stream()
                 .map(r -> {
                     AiResult aiResult = aiResultMap.get(r.getId());
                     if (aiResult == null) {
                         throw new BusinessException(ErrorCode.RANKING_NOT_FOUND);
                     }
-                    return RankingResponse.RankedEntry.of(r, aiResult);
+                    return RankingResponse.RankedEntry.of(r, aiResult, nicknameMap.get(r.getUserId()));
                 })
                 .toList();
 
         List<RankingResponse.OtherEntry> others = otherResults.stream()
-                .map(RankingResponse.OtherEntry::from)
+                .map(r -> RankingResponse.OtherEntry.from(r, nicknameMap.get(r.getUserId())))
                 .toList();
 
-        // TODO: BE1 User 도메인 연동 후 UserInfo(nickname, profileImageUrl) 실제 데이터로 교체
         String crewName = crewRepository.findByIdAndDeletedAtIsNull(event.getCrewId())
                 .map(crew -> crew.getName())
                 .orElse(null);

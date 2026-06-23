@@ -5,9 +5,9 @@ import java.util.UUID;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import lombok.RequiredArgsConstructor;
 
 import com.todaypoor.global.response.ApiResponse;
+import com.todaypoor.global.security.CustomUserDetails;
 import com.todaypoor.ranking.dto.TodayRankingResult;
 import com.todaypoor.ranking.dto.response.RankingResponse;
 import com.todaypoor.ranking.service.RankingService;
@@ -36,9 +37,9 @@ public class RankingController {
     @GetMapping("/today")
     public ResponseEntity<ApiResponse<?>> getTodayRanking(
             @PathVariable UUID crewId,
-            @RequestHeader("X-USER-ID") UUID userId
+            @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        TodayRankingResult result = rankingService.getTodayRanking(userId, crewId);
+        TodayRankingResult result = rankingService.getTodayRanking(userDetails.getUserId(), crewId);
 
         if (result.isPending()) {
             return ResponseEntity.ok(new ApiResponse<>(
@@ -67,10 +68,10 @@ public class RankingController {
     @GetMapping
     public ResponseEntity<ApiResponse<RankingResponse>> getRankingByDate(
             @PathVariable UUID crewId,
-            @RequestHeader("X-USER-ID") UUID userId,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
-        RankingResponse response = rankingService.getRankingByDate(userId, crewId, date);
+        RankingResponse response = rankingService.getRankingByDate(userDetails.getUserId(), crewId, date);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

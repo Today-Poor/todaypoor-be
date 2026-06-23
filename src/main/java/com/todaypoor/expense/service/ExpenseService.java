@@ -12,10 +12,13 @@ import tools.jackson.databind.ObjectMapper;
 import com.todaypoor.ai.client.ClaudeOcrParserClient;
 import com.todaypoor.ai.client.GoogleVisionClient;
 import com.todaypoor.ai.entity.OcrResult;
+import com.todaypoor.crew.entity.Crew;
+import com.todaypoor.crew.repository.CrewRepository;
 import com.todaypoor.expense.dto.request.ExpenseUpdateRequest;
 import com.todaypoor.expense.dto.response.*;
 import com.todaypoor.global.exception.BusinessException;
 import com.todaypoor.global.exception.ErrorCode;
+import com.todaypoor.user.repository.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -38,6 +41,8 @@ public class ExpenseService {
 
     private final ExpenseRepository expenseRepository;
     private final OcrResultRepository ocrResultRepository;
+    private final CrewRepository crewRepository;
+    private final UserRepository userRepository;
     private final GoogleVisionClient googleVisionClient;
     private final ClaudeOcrParserClient claudeOcrParserClient;
     private final ObjectMapper objectMapper;
@@ -131,13 +136,13 @@ public class ExpenseService {
         long totalAmount = expenseRepository.sumAmountByCrewIdAndUserIdAndDate(
                 crewId, targetUserId, startOfDay, endOfDay).orElse(0L);
 
-        // TODO: 크루/유저 도메인 연동 후 실제 데이터로 교체
-        String crewName = "거지방 1조";
-        String nickname = "철수";
-        String profileImageUrl = "https://image-url.com/1.png";
+        String crewName = crewRepository.findByIdAndDeletedAtIsNull(crewId)
+                .map(Crew::getName).orElse(null);
+        String nickname = userRepository.findByIdAndDeletedAtIsNull(targetUserId)
+                .map(user -> user.getNickname()).orElse(null);
 
         return MemberExpenseListResponse.of(
-                crewId, crewName, targetUserId, nickname, profileImageUrl,
+                crewId, crewName, targetUserId, nickname, null,
                 date, totalAmount, expensePage.getContent(), requestUserId
         );
     }
@@ -150,19 +155,20 @@ public class ExpenseService {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
 
-        // TODO: 유저 도메인 연동 후 실제 데이터로 교체
+        String nickname = userRepository.findByIdAndDeletedAtIsNull(expense.getUserId())
+                .map(user -> user.getNickname()).orElse(null);
         ExpenseDetailResponse.UserInfo userInfo = ExpenseDetailResponse.UserInfo.of(
-                expense.getUserId(), "철수", "https://image-url.com/1.png"
+                expense.getUserId(), nickname, null
         );
 
-        // TODO: OCR 도메인 연동 후 실제 데이터로 교체
         ExpenseDetailResponse.OcrResultInfo ocrInfo = null;
         if (expense.getOcrResultId() != null) {
-            ocrInfo = ExpenseDetailResponse.OcrResultInfo.of(
-                    expense.getOcrResultId(),
-                    "맘스터치 대구점 6,500원...",
-                    List.of()
-            );
+            OcrResult ocrResult = ocrResultRepository.findById(expense.getOcrResultId()).orElse(null);
+            if (ocrResult != null) {
+                ocrInfo = ExpenseDetailResponse.OcrResultInfo.of(
+                        ocrResult.getId(), ocrResult.getRawText(), List.of()
+                );
+            }
         }
 
         return ExpenseDetailResponse.of(expense, requestUserId, userInfo, ocrInfo);

@@ -2,7 +2,9 @@ package com.todaypoor.crew.service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +24,8 @@ import com.todaypoor.crew.repository.CrewMemberRepository;
 import com.todaypoor.crew.repository.CrewRepository;
 import com.todaypoor.global.exception.BusinessException;
 import com.todaypoor.global.exception.ErrorCode;
+import com.todaypoor.user.entity.User;
+import com.todaypoor.user.repository.UserRepository;
 
 @Service
 @Slf4j
@@ -32,6 +36,7 @@ public class CrewMemberService {
     private final CrewRepository crewRepository;
     private final CrewMemberRepository crewMemberRepository;
     private final CrewAuthorizationService crewAuthorizationService;
+    private final UserRepository userRepository;
 
     @Transactional
     public JoinCrewResponse joinCrew(UUID userId, JoinCrewRequest request) {
@@ -86,10 +91,13 @@ public class CrewMemberService {
         Crew crew = crewRepository.findByIdAndDeletedAtIsNull(crewId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.CREW_NOT_FOUND));
 
-        List<CrewMemberList> members = crewMemberRepository.findByCrewIdAndDeletedAtIsNull(crewId).stream()
-                .map(crewMember -> {
-                    return CrewMemberList.from(crewMember);
-                })
+        List<CrewMember> crewMembers = crewMemberRepository.findByCrewIdAndDeletedAtIsNull(crewId);
+        List<UUID> memberUserIds = crewMembers.stream().map(CrewMember::getUserId).toList();
+        Map<UUID, String> nicknameMap = userRepository.findAllById(memberUserIds).stream()
+                .collect(Collectors.toMap(User::getId, User::getNickname));
+
+        List<CrewMemberList> members = crewMembers.stream()
+                .map(crewMember -> CrewMemberList.from(crewMember, nicknameMap.get(crewMember.getUserId())))
                 .toList();
 
         return CrewMemberListResponse.of(crew, members);
@@ -116,7 +124,9 @@ public class CrewMemberService {
         crewAuthorizationService.validateMember(crewId, userId);
         CrewMember crewMember = crewAuthorizationService.validateMember(crewId, crewMemberId);
 
-        return CrewMemberDetailResponse.from(crewMember);
+        String nickname = userRepository.findByIdAndDeletedAtIsNull(crewMember.getUserId())
+                .map(User::getNickname).orElse(null);
+        return CrewMemberDetailResponse.from(crewMember, nickname);
     }
 
     private void validateCrewMemberId(UUID crewMemberId) {
