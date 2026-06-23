@@ -65,4 +65,9 @@ public class DailyRankingEvent extends BaseEntity {
         if (crewId == null) throw new IllegalArgumentException("crewId는 필수입니다.");
         if (rankingDate == null) throw new IllegalArgumentException("rankingDate는 필수입니다.");
     }
+
+    public void updateStatus(RankingEventStatus newStatus) {
+        if (newStatus == null) throw new IllegalArgumentException("status는 필수입니다.");
+        this.status = newStatus;
+    }
 }
