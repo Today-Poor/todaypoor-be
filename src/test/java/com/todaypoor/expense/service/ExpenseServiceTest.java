@@ -78,7 +78,7 @@ class ExpenseServiceTest {
         given(expenseRepository.findById(expenseId)).willReturn(Optional.of(expense));
 
         // when & then (실행 및 예외 검증)
-        assertThatThrownBy(() -> expenseService.getExpenseDetail(requestCrewId, expenseId))
+        assertThatThrownBy(() -> expenseService.getExpenseDetail(UUID.randomUUID(), requestCrewId, expenseId))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.FORBIDDEN);
     }

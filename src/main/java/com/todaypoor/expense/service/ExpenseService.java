@@ -112,16 +112,17 @@ public class ExpenseService {
         expenseRepository.save(expense);
     }
 
-    public MemberExpenseListResponse getMemberExpenses(UUID crewId, UUID userId, LocalDate date, Pageable pageable) {
+    public MemberExpenseListResponse getMemberExpenses(
+            UUID requestUserId, UUID crewId, UUID targetUserId, LocalDate date, Pageable pageable) {
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
 
         Page<Expense> expensePage = expenseRepository.findByCrewIdAndUserIdAndSpentAtBetweenOrderBySpentAtDesc(
-                crewId, userId, startOfDay, endOfDay, pageable
+                crewId, targetUserId, startOfDay, endOfDay, pageable
         );
 
         long totalAmount = expenseRepository.sumAmountByCrewIdAndUserIdAndDate(
-                crewId, userId, startOfDay, endOfDay).orElse(0L);
+                crewId, targetUserId, startOfDay, endOfDay).orElse(0L);
 
         // TODO: 크루/유저 도메인 연동 후 실제 데이터로 교체
         String crewName = "거지방 1조";
@@ -129,12 +130,12 @@ public class ExpenseService {
         String profileImageUrl = "https://image-url.com/1.png";
 
         return MemberExpenseListResponse.of(
-                crewId, crewName, userId, nickname, profileImageUrl,
-                date, totalAmount, expensePage.getContent()
+                crewId, crewName, targetUserId, nickname, profileImageUrl,
+                date, totalAmount, expensePage.getContent(), requestUserId
         );
     }
 
-    public ExpenseDetailResponse getExpenseDetail(UUID crewId, UUID expenseId) {
+    public ExpenseDetailResponse getExpenseDetail(UUID requestUserId, UUID crewId, UUID expenseId) {
         Expense expense = expenseRepository.findById(expenseId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.EXPENSE_NOT_FOUND));
 
@@ -157,7 +158,7 @@ public class ExpenseService {
             );
         }
 
-        return ExpenseDetailResponse.of(expense, userInfo, ocrInfo);
+        return ExpenseDetailResponse.of(expense, requestUserId, userInfo, ocrInfo);
     }
 
     @Transactional

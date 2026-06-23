@@ -66,13 +66,15 @@ public class ExpenseController {
     public ResponseEntity<ApiResponse<MemberExpenseListResponse>> getMemberExpenses(
             @PathVariable UUID crewId,
             @PathVariable UUID userId,
+            @RequestHeader("X-USER-ID") UUID requestUserId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
         PageRequest pageRequest = PageRequest.of(page, size);
 
-        MemberExpenseListResponse response = expenseService.getMemberExpenses(crewId, userId, date, pageRequest);
+        MemberExpenseListResponse response = expenseService.getMemberExpenses(
+                requestUserId, crewId, userId, date, pageRequest);
 
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -80,9 +82,10 @@ public class ExpenseController {
     @GetMapping("/expenses/{expenseId}")
     public ResponseEntity<ApiResponse<ExpenseDetailResponse>> getExpenseDetail(
             @PathVariable UUID crewId,
-            @PathVariable UUID expenseId
+            @PathVariable UUID expenseId,
+            @RequestHeader("X-USER-ID") UUID requestUserId
     ) {
-        ExpenseDetailResponse response = expenseService.getExpenseDetail(crewId, expenseId);
+        ExpenseDetailResponse response = expenseService.getExpenseDetail(requestUserId, crewId, expenseId);
 
         return ResponseEntity.ok(ApiResponse.success(response));
     }
