@@ -7,10 +7,13 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
+import com.todaypoor.ai.client.ClaudeOcrParserClient;
+import com.todaypoor.ai.client.GoogleVisionClient;
 import com.todaypoor.ai.entity.OcrResult;
 import com.todaypoor.expense.dto.request.ExpenseUpdateRequest;
 import com.todaypoor.expense.dto.response.*;
-import com.todaypoor.expense.entity.ExpenseCategory;
 import com.todaypoor.global.exception.BusinessException;
 import com.todaypoor.global.exception.ErrorCode;
 import org.springframework.data.domain.Page;
@@ -34,6 +37,9 @@ public class ExpenseService {
 
     private final ExpenseRepository expenseRepository;
     private final OcrResultRepository ocrResultRepository;
+    private final GoogleVisionClient googleVisionClient;
+    private final ClaudeOcrParserClient claudeOcrParserClient;
+    private final ObjectMapper objectMapper;
 
     @Transactional
     public ExpenseSaveResponse saveExpenses(UUID userId, UUID crewId, ExpenseSaveRequest request) {
@@ -164,27 +170,29 @@ public class ExpenseService {
     @Transactional
     public OcrAnalyzeResponse analyzeReceipt(UUID crewId, UUID userId, MultipartFile image) {
 
-        // 1. [Mocking] 구글 Vision API로 이미지 전송 -> 텍스트 추출 (나중에 실제 연동)
-        String mockRawText = "맘스터치 대구점 6,500원 2026.05.20 14:30\n스타벅스 5,800원 2026.05.20 13:10";
+        // 1. Google Vision API로 이미지에서 텍스트 추출
+        String rawText = googleVisionClient.extractText(image);
 
-        // 2. [Mocking] AI 모델에게 텍스트 전달 -> JSON 배열 파싱 (나중에 실제 연동)
-        List<OcrAnalyzeResponse.ParsedExpense> mockParsedList = List.of(
-                OcrAnalyzeResponse.ParsedExpense.of(
-                        "temp-1", ExpenseCategory.FOOD, 6500, "맘스터치 대구점", LocalDateTime.of(2026, 5, 20, 14, 30)
-                ),
-                OcrAnalyzeResponse.ParsedExpense.of(
-                        "temp-2", ExpenseCategory.CAFE, 5800, "스타벅스", LocalDateTime.of(2026, 5, 20, 13, 10)
-                )
-        );
+        // 2. Claude AI로 텍스트에서 소비 내역 구조화 파싱
+        List<OcrAnalyzeResponse.ParsedExpense> parsedList = claudeOcrParserClient.parseExpenses(rawText);
 
+        if (parsedList.isEmpty()) {
+            throw new BusinessException(ErrorCode.EMPTY_PARSED_EXPENSES);
+        }
 
         // 3. OCR 분석 결과를 DB에 저장
-        String mockParsedDataJson = "[{\"category\":\"FOOD\", \"amount\":6500}, {\"category\":\"CAFE\", \"amount\":5800}]";
+        String parsedDataJson = serializeParsedExpenses(parsedList);
+        OcrResult ocrResult = OcrResult.create(rawText, parsedDataJson);
+        ocrResultRepository.save(ocrResult);
 
-        OcrResult ocrResult = OcrResult.create(mockRawText, mockParsedDataJson);
-        ocrResultRepository.save(ocrResult); // DB에 저장하고 UUID 발급받기
+        return OcrAnalyzeResponse.of(ocrResult.getId(), rawText, parsedList);
+    }
 
-        // 4. 발급받은 진짜 DB ID와 가짜 데이터들을 DTO에 담아서 리턴
-        return OcrAnalyzeResponse.of(ocrResult.getId(), mockRawText, mockParsedList);
+    private String serializeParsedExpenses(List<OcrAnalyzeResponse.ParsedExpense> parsedList) {
+        try {
+            return objectMapper.writeValueAsString(parsedList);
+        } catch (JacksonException e) {
+            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
     }
 }
