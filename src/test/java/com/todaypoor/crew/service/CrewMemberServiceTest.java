@@ -146,6 +146,25 @@ class CrewMemberServiceTest {
     }
 
     @Test
+    void joinCrew_limitExceeded_throwsBusinessException() {
+        UUID crewId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+        Crew crew = crewWithId(crewId, "LIMIT123", LocalDateTime.now().plusDays(1));
+
+        given(crewRepository.findByInviteCodeAndDeletedAtIsNull("LIMIT123")).willReturn(Optional.of(crew));
+        given(crewMemberRepository.existsByCrewIdAndUserIdAndDeletedAtIsNull(crewId, userId)).willReturn(false);
+        given(crewMemberRepository.countByCrewIdAndDeletedAtIsNull(crewId)).willReturn(5);
+
+        BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> crewMemberService.joinCrew(userId, new JoinCrewRequest("limit123"))
+        );
+
+        assertEquals(ErrorCode.CREW_MEMBER_LIMIT_EXCEEDED, exception.getErrorCode());
+        verify(crewMemberRepository).countByCrewIdAndDeletedAtIsNull(crewId);
+    }
+
+    @Test
     void getCrewMembers_success_returnsMemberList() {
         UUID crewId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();

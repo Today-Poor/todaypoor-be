@@ -57,6 +57,11 @@ public class CrewMemberService {
             throw new BusinessException(ErrorCode.INVALID_REQUEST); // 이미 가입된 메머버
         }
 
+        Integer currentMemberCount = crewMemberRepository.countByCrewIdAndDeletedAtIsNull(crew.getId());
+        if (currentMemberCount >= crew.getMaxMemberCount()) {
+            throw new BusinessException(ErrorCode.CREW_MEMBER_LIMIT_EXCEEDED);
+        }
+
         CrewMember crewMember = crewMemberRepository.findDeletedMember(crew.getId(), userId)
                 .map(deletedMember -> { // soft delete 된 멤버 값이 있을 때만 수행
                     deletedMember.restoreMember(CrewRole.MEMBER);
@@ -64,7 +69,7 @@ public class CrewMemberService {
                 })
                 .orElseGet(() -> crewMemberRepository.save(CrewMember.createMember(crew.getId(), userId)));
 
-        Integer currentMemberCount = crewMemberRepository.countByCrewIdAndDeletedAtIsNull(crew.getId());
+        currentMemberCount = crewMemberRepository.countByCrewIdAndDeletedAtIsNull(crew.getId());
 
         return JoinCrewResponse.of(crew, crewMember, currentMemberCount);
     }
