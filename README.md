@@ -29,7 +29,7 @@
 
 ## 🛠️ 기술 스택 (Tech Stack)
 
-- **언어 및 프레임워크**: Java 21, Spring Boot 3.4.1
+- **언어 및 프레임워크**: Java 17, Spring Boot 4.0.6
 - **보안 및 인증**: Spring Security, Spring Security OAuth2 Client, JJWT
 - **데이터베이스**: MySQL 8.x, Spring Data JPA, Hibernate, Docker Compose
 - **외부 API 연동**:
@@ -89,6 +89,7 @@ docker compose up -d
 
 ```
 src/main/java/com/todaypoor/
+├── ai/              # OCR 이미지 텍스트 추출 및 Claude AI JSON 파싱 계층
 ├── auth/            # 소셜 로그인 및 JWT 토큰 처리 계층
 ├── user/            # 회원 정보 관리 계층
 ├── crew/            # 크루 생성, 가입, 탈퇴 및 정원/삭제 계층
@@ -101,6 +102,7 @@ src/main/java/com/todaypoor/
 
 ## 📚 관련 개발자 문서 링크 (Developer Guides)
 * 💡 [전체 문서 개요 및 인덱스](./docs/overview.md)
+* 🚀 [배포 가이드 (CI/CD)](./docs/operations/procedure/deploy.md)
 * 🔗 [공통 예외 및 응답 가이드](./docs/architecture/foundation/common-foundation.md)
 * 💾 [BaseEntity 및 Auditing 사용법](./docs/architecture/foundation/base-entity.md)
 * ⚙️ [로컬 DB 세팅 및 트러블슈팅](./docs/operations/local/local-db.md)
