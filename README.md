@@ -1,6 +1,6 @@
-# 💰 거지들의 역습 (TodayPoor) - Backend
+# 💰 오늘의 거지 (TodayPoor) - Backend
 
-거지아워드(Geoji Awards)의 백엔드 서비스입니다. 친구들과 크루(Crew)를 만들어 소비 내역을 공유하고, 영수증 OCR 자동 입력 기능과 Claude AI 기반의 소비 랭킹 및 피드백(Roast/Comfort 모드)을 제공받아 소비를 줄여나가는 재미있는 지출 관리 서비스입니다.
+오늘의 거지(TodayPoor)의 백엔드 서비스입니다. 친구들과 크루(Crew)를 만들어 소비 내역을 공유하고, 영수증 OCR 자동 입력 기능과 Claude AI 기반의 소비 랭킹 및 피드백(Roast/Comfort 모드)을 제공받아 소비를 줄여나가는 재미있는 지출 관리 서비스입니다.
 
 ---
 
