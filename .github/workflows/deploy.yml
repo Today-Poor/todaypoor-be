@@ -56,5 +56,6 @@ jobs:
               -Dspring.datasource.url=${{ secrets.DB_URL }} \
               -Dspring.datasource.username=${{ secrets.DB_USERNAME }} \
               -Dspring.datasource.password=${{ secrets.DB_PASSWORD }} \
+              -Dspring.jpa.hibernate.ddl-auto=update \
               -DCLAUDE_API_KEY=${{ secrets.CLAUDE_API_KEY }} \
               -jar todaypoor-be-0.0.1-SNAPSHOT.jar > nohup.out 2>&1 &
